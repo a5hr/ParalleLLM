@@ -91,10 +91,9 @@ async function fetchOpenAI(apiKey: string): Promise<ApiModelData[]> {
 
 async function fetchGoogle(apiKey: string): Promise<ApiModelData[]> {
   verbose('Fetching Google models...');
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`,
-    { signal: AbortSignal.timeout(10_000) },
-  );
+  const url = new URL('https://generativelanguage.googleapis.com/v1beta/models');
+  url.searchParams.set('key', apiKey);
+  const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
   if (!res.ok) throw new Error(`Google API ${res.status}`);
   const data = (await res.json()) as {
     models: Array<{ name: string; inputTokenLimit?: number; outputTokenLimit?: number }>;
@@ -237,9 +236,10 @@ async function main() {
           for (const m of raw) apiModels.set(m.id, m);
           log(`  ${provider}: fetched ${apiModels.size} models from API`);
         } catch (err) {
-          log(
-            `  ${provider}: API fetch failed (${err instanceof Error ? err.message : err}), using fallback`,
-          );
+          // Sanitize error message to prevent API key leakage in logs
+          const msg = err instanceof Error ? err.message : String(err);
+          const safeMsg = apiKey ? msg.replaceAll(apiKey, '***') : msg;
+          log(`  ${provider}: API fetch failed (${safeMsg}), using fallback`);
         }
       } else {
         log(`  ${provider}: no API key ($${fetcherConfig.envKey}), using fallback`);

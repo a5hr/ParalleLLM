@@ -12,11 +12,13 @@ import { LocalModelsSection } from './local-models-section';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Settings2, Check, Zap, DollarSign, MessageSquare } from 'lucide-react';
+import { useT } from '@/store/locale-store';
 
 export function ModelSelector() {
   const models = useModelStore((s) => s.models);
   const selectedModelIds = useModelStore((s) => s.selectedModelIds);
   const toggleModel = useModelStore((s) => s.toggleModel);
+  const { t } = useT();
 
   const [configModelId, setConfigModelId] = useState<string | null>(null);
 
@@ -41,9 +43,9 @@ export function ModelSelector() {
   return (
     <div className="space-y-4 rounded-lg border bg-card p-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Models</h2>
+        <h2 className="text-sm font-semibold">{t('models.title')}</h2>
         <span className="text-xs text-muted-foreground">
-          {selectedModelIds.length} selected
+          {t('models.selected', { count: selectedModelIds.length })}
         </span>
       </div>
 
@@ -54,7 +56,7 @@ export function ModelSelector() {
         return (
           <div className="space-y-3">
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Cloud
+              {t('models.cloud')}
             </span>
             {cloudProviders.map((provider) => {
               const providerModels = groupedByProvider.get(provider) ?? [];
@@ -87,7 +89,7 @@ export function ModelSelector() {
                               <span className="text-sm font-semibold truncate">{m.name}</span>
                               {m.isFree && (
                                 <span className="rounded-full bg-green-100 px-1.5 py-0 text-[10px] font-bold leading-4 text-green-800 dark:bg-green-900 dark:text-green-200 shrink-0">
-                                  FREE
+                                  {t('models.free')}
                                 </span>
                               )}
                             </div>
@@ -110,23 +112,23 @@ export function ModelSelector() {
                             </div>
                           </div>
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-                            <span className="inline-flex items-center gap-1" title="Context window">
+                            <span className="inline-flex items-center gap-1" title={t('models.contextWindow')}>
                               <MessageSquare className="size-3" />
                               {formatTokens(m.parameters.maxTokens)}
                             </span>
-                            <span className="inline-flex items-center gap-1" title="Max output">
+                            <span className="inline-flex items-center gap-1" title={t('models.maxOutput')}>
                               <Zap className="size-3" />
                               {formatTokens(m.maxOutput)}
                             </span>
                             {m.pricing ? (
-                              <span className="inline-flex items-center gap-1" title="Input / Output per 1M tokens">
+                              <span className="inline-flex items-center gap-1" title={t('models.pricingTitle')}>
                                 <DollarSign className="size-3" />
                                 <span>{formatPrice(m.pricing.input)}/{formatPrice(m.pricing.output)}</span>
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 font-semibold text-green-600 dark:text-green-400">
                                 <DollarSign className="size-3" />
-                                Free
+                                {t('models.freeLower')}
                               </span>
                             )}
                           </div>

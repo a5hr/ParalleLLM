@@ -5,6 +5,7 @@ import { useModelStore } from '@/store/model-store';
 import { cn } from '@/lib/utils';
 import { RefreshCw, Plus, X, Server } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useT } from '@/store/locale-store';
 
 /** Well-known local servers to auto-scan on mount */
 const wellKnownServers = [
@@ -36,6 +37,7 @@ export function LocalModelsSection() {
   const addLocalModels = useModelStore((s) => s.addLocalModels);
   const removeLocalModels = useModelStore((s) => s.removeLocalModels);
 
+  const { t } = useT();
   const [scanning, setScanning] = useState<Set<string>>(new Set());
   const [urlInput, setUrlInput] = useState('');
   const [showInput, setShowInput] = useState(false);
@@ -140,10 +142,10 @@ export function LocalModelsSection() {
       {/* Section header */}
       <div className="flex items-center gap-2">
         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          Local
+          {t('models.local')}
         </span>
         <span className="rounded-full px-1.5 py-0 text-[10px] font-bold leading-4 bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200">
-          FREE
+          {t('models.free')}
         </span>
       </div>
 
@@ -170,17 +172,17 @@ export function LocalModelsSection() {
             </div>
             {ep.status === 'connected' && (
               <span className="text-[10px] text-green-600 dark:text-green-400 font-medium shrink-0">
-                {ep.models.length} models
+                {t('localModels.models', { count: ep.models.length })}
               </span>
             )}
             {ep.status === 'disconnected' && !isScanning && (
               <span className="text-[10px] text-destructive font-medium shrink-0">
-                Offline
+                {t('localModels.offline')}
               </span>
             )}
             {ep.status === 'checking' && (
               <span className="text-[10px] text-yellow-600 dark:text-yellow-400 font-medium shrink-0">
-                Connecting...
+                {t('localModels.connecting')}
               </span>
             )}
             <Button
@@ -189,7 +191,7 @@ export function LocalModelsSection() {
               className="size-6 shrink-0"
               onClick={() => handleRefresh(ep)}
               disabled={isScanning}
-              aria-label="Refresh"
+              aria-label={t('localModels.refresh')}
             >
               <RefreshCw className={cn('size-3', isScanning && 'animate-spin')} />
             </Button>
@@ -198,7 +200,7 @@ export function LocalModelsSection() {
               size="icon"
               className="size-6 shrink-0 text-muted-foreground hover:text-destructive"
               onClick={() => handleRemove(ep)}
-              aria-label="Remove"
+              aria-label={t('localModels.remove')}
             >
               <X className="size-3" />
             </Button>
@@ -223,7 +225,7 @@ export function LocalModelsSection() {
             autoFocus
           />
           <Button size="sm" className="h-8" onClick={handleAddUrl}>
-            Connect
+            {t('localModels.connect')}
           </Button>
           <Button
             variant="ghost"
@@ -242,14 +244,14 @@ export function LocalModelsSection() {
           onClick={() => setShowInput(true)}
         >
           <Plus className="size-3" />
-          Add server
+          {t('localModels.addServer')}
         </Button>
       )}
 
       {/* Help text */}
       <p className="text-[11px] text-muted-foreground leading-relaxed">
-        Any OpenAI-compatible server works: Ollama, LM Studio, vLLM, llama.cpp, etc.
-        {localEndpoints.length === 0 && ' Well-known ports are auto-detected on startup.'}
+        {t('localModels.helpText')}
+        {localEndpoints.length === 0 && t('localModels.autoDetect')}
       </p>
     </div>
   );

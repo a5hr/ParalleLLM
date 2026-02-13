@@ -1,15 +1,18 @@
 'use client';
 
-import { Moon, Sun, Monitor, KeyRound } from 'lucide-react';
+import { Moon, Sun, Monitor, KeyRound, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUIStore } from '@/store/ui-store';
 import { useApiKeyStore } from '@/store/api-key-store';
+import { useLocaleStore, useT } from '@/store/locale-store';
 import { ApiKeyDialog } from '@/components/settings/api-key-dialog';
 import { useEffect, useState } from 'react';
 
 export function Header() {
   const { theme, setTheme } = useUIStore();
   const keys = useApiKeyStore((s) => s.keys);
+  const setLocale = useLocaleStore((s) => s.setLocale);
+  const { t, locale } = useT();
   const [mounted, setMounted] = useState(false);
   const [keyDialogOpen, setKeyDialogOpen] = useState(false);
   const configuredCount = Object.values(keys).filter(Boolean).length;
@@ -31,10 +34,19 @@ export function Header() {
     }
   }, [theme, mounted]);
 
+  useEffect(() => {
+    if (!mounted) return;
+    document.documentElement.lang = locale;
+  }, [locale, mounted]);
+
   const cycleTheme = () => {
     const order: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
     const idx = order.indexOf(theme);
     setTheme(order[(idx + 1) % order.length]);
+  };
+
+  const toggleLocale = () => {
+    setLocale(locale === 'en' ? 'ja' : 'en');
   };
 
   const ThemeIcon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor;
@@ -54,7 +66,7 @@ export function Header() {
             variant="ghost"
             size="icon"
             onClick={() => setKeyDialogOpen(true)}
-            aria-label="API Keys"
+            aria-label={t('header.apiKeys')}
             className="relative"
           >
             <KeyRound className="size-4" />
@@ -66,9 +78,19 @@ export function Header() {
           </Button>
           <Button
             variant="ghost"
+            size="sm"
+            onClick={toggleLocale}
+            aria-label={t('lang.switch')}
+            className="gap-1 text-xs font-medium"
+          >
+            <Languages className="size-3.5" />
+            {mounted && (locale === 'en' ? 'EN' : 'JA')}
+          </Button>
+          <Button
+            variant="ghost"
             size="icon"
             onClick={cycleTheme}
-            aria-label={`Theme: ${theme}`}
+            aria-label={`${t('header.theme')}: ${theme}`}
           >
             {mounted ? <ThemeIcon className="size-4" /> : <Monitor className="size-4" />}
           </Button>

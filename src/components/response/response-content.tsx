@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { StreamingCursor } from './streaming-cursor';
+import { useT } from '@/store/locale-store';
 
 interface ResponseContentProps {
   content: string;
@@ -11,6 +12,7 @@ interface ResponseContentProps {
 }
 
 export function ResponseContent({ content, isStreaming }: ResponseContentProps) {
+  const { t } = useT();
   const markdown = useMemo(() => {
     if (!content) return null;
     return (
@@ -72,7 +74,7 @@ export function ResponseContent({ content, isStreaming }: ResponseContentProps) 
   return (
     <div className="prose prose-sm dark:prose-invert max-w-none break-words">
       {content ? markdown : (
-        <span className="text-muted-foreground text-sm">Waiting for response...</span>
+        <span className="text-muted-foreground text-sm">{t('response.waiting')}</span>
       )}
       {isStreaming && <StreamingCursor />}
     </div>

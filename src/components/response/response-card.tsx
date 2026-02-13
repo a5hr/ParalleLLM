@@ -10,6 +10,7 @@ import { ResponseContent } from './response-content';
 import { ResponseMeta } from './response-meta';
 import { cn } from '@/lib/utils';
 import type { ModelResponse } from '@/types/chat';
+import { useT } from '@/store/locale-store';
 
 interface ResponseCardProps {
   response: ModelResponse;
@@ -22,6 +23,7 @@ export const ResponseCard = memo(function ResponseCard({ response }: ResponseCar
   const color = providerColors[provider] ?? providerColors.custom;
   const badge = providerTypeBadge[model?.providerType ?? 'cloud'];
   const displayProviderName = providerNames[provider] ?? provider;
+  const { t } = useT();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
@@ -62,7 +64,7 @@ export const ResponseCard = memo(function ResponseCard({ response }: ResponseCar
               </span>
               {badge && (
                 <span className={cn('rounded-full px-1.5 py-0 text-[10px] font-bold leading-4', badge.className)}>
-                  {badge.label}
+                  {t('models.localBadge')}
                 </span>
               )}
             </div>
@@ -79,7 +81,7 @@ export const ResponseCard = memo(function ResponseCard({ response }: ResponseCar
               size="icon"
               className="size-7 shrink-0"
               onClick={handleCopy}
-              aria-label="Copy response"
+              aria-label={t('response.copy')}
             >
               {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
             </Button>

@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { useApiKeyStore } from '@/store/api-key-store';
 import { providerNames, providerColors } from '@/lib/models';
 import { cn } from '@/lib/utils';
+import { useT } from '@/store/locale-store';
 
 const apiKeyProviders = [
   { id: 'openai', placeholder: 'sk-...', signupUrl: 'https://platform.openai.com/api-keys', hint: 'Paid' },
@@ -31,6 +32,7 @@ export function ApiKeyDialog({ open, onOpenChange }: ApiKeyDialogProps) {
   const keys = useApiKeyStore((s) => s.keys);
   const setKey = useApiKeyStore((s) => s.setKey);
   const removeKey = useApiKeyStore((s) => s.removeKey);
+  const { t } = useT();
 
   const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -71,9 +73,9 @@ export function ApiKeyDialog({ open, onOpenChange }: ApiKeyDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>API Keys</DialogTitle>
+          <DialogTitle>{t('apiKeys.title')}</DialogTitle>
           <DialogDescription>
-            Enter API keys for each provider. Keys are stored in your browser only.
+            {t('apiKeys.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -102,7 +104,7 @@ export function ApiKeyDialog({ open, onOpenChange }: ApiKeyDialogProps) {
                   </label>
                   {isFreeProvider && (
                     <span className="rounded-full bg-green-100 px-1.5 py-0 text-[10px] font-bold leading-4 text-green-800 dark:bg-green-900 dark:text-green-200">
-                      FREE
+                      {t('apiKeys.free')}
                     </span>
                   )}
                   {hasKey && !isDirty && (
@@ -114,7 +116,7 @@ export function ApiKeyDialog({ open, onOpenChange }: ApiKeyDialogProps) {
                     rel="noopener noreferrer"
                     className="ml-auto inline-flex items-center gap-0.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    Get key <ExternalLink className="size-2.5" />
+                    {t('apiKeys.getKey')} <ExternalLink className="size-2.5" />
                   </a>
                 </div>
                 <div className="flex gap-1.5">
@@ -144,7 +146,7 @@ export function ApiKeyDialog({ open, onOpenChange }: ApiKeyDialogProps) {
                     size="icon"
                     className="size-8 shrink-0"
                     onClick={() => toggleVisible(id)}
-                    aria-label={isVisible ? 'Hide key' : 'Show key'}
+                    aria-label={isVisible ? t('apiKeys.hideKey') : t('apiKeys.showKey')}
                   >
                     {isVisible ? (
                       <EyeOff className="size-3.5" />
@@ -160,7 +162,7 @@ export function ApiKeyDialog({ open, onOpenChange }: ApiKeyDialogProps) {
                       className="h-8 text-xs"
                       onClick={() => saveDraft(id)}
                     >
-                      Save
+                      {t('apiKeys.save')}
                     </Button>
                   )}
                 </div>
@@ -170,15 +172,9 @@ export function ApiKeyDialog({ open, onOpenChange }: ApiKeyDialogProps) {
         </div>
 
         <div className="space-y-1.5 mt-2 text-[11px] text-muted-foreground">
-          <p>
-            Groq and OpenRouter offer free API access. Sign up and paste your key above.
-          </p>
-          <p>
-            For local models (Ollama, LM Studio), no key is needed — just start the server locally.
-          </p>
-          <p>
-            Keys are stored in your browser only and sent to your own server.
-          </p>
+          <p>{t('apiKeys.helpFree')}</p>
+          <p>{t('apiKeys.helpLocal')}</p>
+          <p>{t('apiKeys.helpStorage')}</p>
         </div>
       </DialogContent>
     </Dialog>

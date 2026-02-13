@@ -8,6 +8,7 @@ import { useChatStore } from '@/store/chat-store';
 import { useModelStore } from '@/store/model-store';
 import { useStreamChat } from '@/hooks/use-stream-chat';
 import { SystemPromptEditor } from './system-prompt-editor';
+import { useT } from '@/store/locale-store';
 
 export function PromptInput() {
   const prompt = useChatStore((s) => s.prompt);
@@ -16,6 +17,7 @@ export function PromptInput() {
   const clearResponses = useChatStore((s) => s.clearResponses);
   const selectedModelIds = useModelStore((s) => s.selectedModelIds);
   const { startChat, cancelStream, isStreaming } = useStreamChat();
+  const { t } = useT();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const canSend = prompt.trim().length > 0 && selectedModelIds.length > 0 && !isStreaming;
@@ -43,8 +45,8 @@ export function PromptInput() {
           onKeyDown={handleKeyDown}
           placeholder={
             selectedModelIds.length === 0
-              ? 'Select at least one model above to start...'
-              : 'Enter your prompt... (Enter to send, Shift+Enter for newline)'
+              ? t('prompt.placeholderNoModel')
+              : t('prompt.placeholder')
           }
           disabled={selectedModelIds.length === 0}
           className="min-h-[80px] resize-none pr-24"
@@ -55,10 +57,10 @@ export function PromptInput() {
               size="sm"
               variant="destructive"
               onClick={cancelStream}
-              aria-label="Stop streaming"
+              aria-label={t('prompt.stopStreaming')}
             >
               <Square className="size-3" />
-              Stop
+              {t('prompt.stop')}
             </Button>
           ) : (
             <>
@@ -66,7 +68,7 @@ export function PromptInput() {
                 size="icon-sm"
                 variant="ghost"
                 onClick={clearResponses}
-                aria-label="Clear"
+                aria-label={t('prompt.clear')}
                 disabled={!prompt}
               >
                 <Trash2 className="size-3.5" />
@@ -75,10 +77,10 @@ export function PromptInput() {
                 size="sm"
                 onClick={handleSend}
                 disabled={!canSend}
-                aria-label="Send prompt"
+                aria-label={t('prompt.sendPrompt')}
               >
                 <Send className="size-3.5" />
-                Send
+                {t('prompt.send')}
               </Button>
             </>
           )}

@@ -5,6 +5,7 @@ import { useChatStore } from '@/store/chat-store';
 import { useModelStore } from '@/store/model-store';
 import { useApiKeyStore } from '@/store/api-key-store';
 import type { SSEChunkData, SSEErrorData } from '@/types/stream';
+import { trackChatStart, trackChatComplete, trackChatError } from '@/lib/analytics';
 
 export function useStreamChat() {
   const {
@@ -38,6 +39,12 @@ export function useStreamChat() {
           ...(config?.baseUrl ? { provider: config.provider, baseUrl: config.baseUrl } : {}),
         };
       });
+
+      const providers = modelIds.map((id) => {
+        const m = models.find((model) => model.id === id);
+        return m?.provider ?? 'unknown';
+      });
+      trackChatStart(modelIds, providers);
 
       const abortController = useChatStore.getState().abortController;
 
@@ -100,17 +107,21 @@ export function useStreamChat() {
                   updateResponse(chunk.model, { provider: chunk.provider });
                   appendContent(chunk.model, chunk.content);
                 } else if (chunk.type === 'done') {
+                  const tokens = chunk.metadata?.tokensUsed;
+                  const latency = chunk.metadata?.latencyMs;
                   completeResponse(
                     chunk.model,
-                    chunk.metadata?.tokensUsed
-                      ? { promptTokens: 0, completionTokens: chunk.metadata.tokensUsed, totalTokens: chunk.metadata.tokensUsed }
+                    tokens
+                      ? { promptTokens: 0, completionTokens: tokens, totalTokens: tokens }
                       : undefined,
-                    chunk.metadata?.latencyMs
+                    latency
                   );
+                  trackChatComplete(chunk.model, chunk.provider ?? 'unknown', latency, tokens);
                 }
               } else if (eventType === 'error') {
                 const errData = data as SSEErrorData;
                 setError(errData.model, errData.content);
+                trackChatError(errData.model, errData.provider ?? 'unknown');
               } else if (eventType === 'done') {
                 // All streams done, nothing to do - individual completes handle state
               }

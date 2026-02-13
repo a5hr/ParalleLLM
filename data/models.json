@@ -1,0 +1,275 @@
+[
+  {
+    "id": "gpt-5.2",
+    "name": "GPT-5.2",
+    "provider": "openai",
+    "providerType": "cloud",
+    "isFree": false,
+    "maxTokens": 400000,
+    "maxOutput": 128000,
+    "pricing": {
+      "input": 1.75,
+      "output": 14
+    },
+    "supportedFeatures": [
+      "streaming",
+      "function-calling",
+      "reasoning"
+    ]
+  },
+  {
+    "id": "gpt-5-mini",
+    "name": "GPT-5 mini",
+    "provider": "openai",
+    "providerType": "cloud",
+    "isFree": false,
+    "maxTokens": 1047576,
+    "maxOutput": 32768,
+    "pricing": {
+      "input": 0.25,
+      "output": 2
+    },
+    "supportedFeatures": [
+      "streaming",
+      "function-calling"
+    ]
+  },
+  {
+    "id": "gpt-4o-mini",
+    "name": "GPT-4o mini",
+    "provider": "openai",
+    "providerType": "cloud",
+    "isFree": false,
+    "maxTokens": 128000,
+    "maxOutput": 16384,
+    "pricing": {
+      "input": 0.15,
+      "output": 0.6
+    },
+    "supportedFeatures": [
+      "streaming",
+      "function-calling"
+    ]
+  },
+  {
+    "id": "claude-opus-4-6",
+    "name": "Claude Opus 4.6",
+    "provider": "anthropic",
+    "providerType": "cloud",
+    "isFree": false,
+    "maxTokens": 200000,
+    "maxOutput": 128000,
+    "pricing": {
+      "input": 5,
+      "output": 25
+    },
+    "supportedFeatures": [
+      "streaming",
+      "extended-thinking",
+      "adaptive-thinking"
+    ]
+  },
+  {
+    "id": "claude-sonnet-4-5-20250929",
+    "name": "Claude Sonnet 4.5",
+    "provider": "anthropic",
+    "providerType": "cloud",
+    "isFree": false,
+    "maxTokens": 200000,
+    "maxOutput": 64000,
+    "pricing": {
+      "input": 3,
+      "output": 15
+    },
+    "supportedFeatures": [
+      "streaming",
+      "extended-thinking"
+    ]
+  },
+  {
+    "id": "claude-haiku-4-5-20251001",
+    "name": "Claude Haiku 4.5",
+    "provider": "anthropic",
+    "providerType": "cloud",
+    "isFree": false,
+    "maxTokens": 200000,
+    "maxOutput": 64000,
+    "pricing": {
+      "input": 1,
+      "output": 5
+    },
+    "supportedFeatures": [
+      "streaming",
+      "extended-thinking"
+    ]
+  },
+  {
+    "id": "gemini-3-flash-preview",
+    "name": "Gemini 3 Flash",
+    "provider": "google",
+    "providerType": "cloud",
+    "isFree": false,
+    "maxTokens": 1048576,
+    "maxOutput": 65536,
+    "pricing": {
+      "input": 0.5,
+      "output": 3
+    },
+    "supportedFeatures": [
+      "streaming",
+      "grounding"
+    ]
+  },
+  {
+    "id": "gemini-2.5-pro",
+    "name": "Gemini 2.5 Pro",
+    "provider": "google",
+    "providerType": "cloud",
+    "isFree": false,
+    "maxTokens": 1048576,
+    "maxOutput": 65536,
+    "pricing": {
+      "input": 1.25,
+      "output": 10
+    },
+    "supportedFeatures": [
+      "streaming",
+      "grounding"
+    ]
+  },
+  {
+    "id": "gemini-2.5-flash",
+    "name": "Gemini 2.5 Flash",
+    "provider": "google",
+    "providerType": "cloud",
+    "isFree": false,
+    "maxTokens": 1048576,
+    "maxOutput": 65536,
+    "pricing": {
+      "input": 0.15,
+      "output": 0.6
+    },
+    "supportedFeatures": [
+      "streaming",
+      "grounding"
+    ]
+  },
+  {
+    "id": "llama-3.3-70b-versatile",
+    "name": "Llama 3.3 70B",
+    "provider": "groq",
+    "providerType": "cloud",
+    "isFree": true,
+    "maxTokens": 131072,
+    "maxOutput": 32768,
+    "pricing": null,
+    "supportedFeatures": [
+      "streaming"
+    ]
+  },
+  {
+    "id": "openai/gpt-oss-120b",
+    "name": "GPT-OSS 120B",
+    "provider": "groq",
+    "providerType": "cloud",
+    "isFree": true,
+    "maxTokens": 131072,
+    "maxOutput": 32768,
+    "pricing": null,
+    "supportedFeatures": [
+      "streaming"
+    ]
+  },
+  {
+    "id": "meta-llama/llama-4-maverick-17b-128e-instruct",
+    "name": "Llama 4 Maverick 17B",
+    "provider": "groq",
+    "providerType": "cloud",
+    "isFree": true,
+    "maxTokens": 131072,
+    "maxOutput": 32768,
+    "pricing": null,
+    "supportedFeatures": [
+      "streaming"
+    ]
+  },
+  {
+    "id": "meta-llama/llama-4-scout-17b-16e-instruct",
+    "name": "Llama 4 Scout 17B",
+    "provider": "groq",
+    "providerType": "cloud",
+    "isFree": true,
+    "maxTokens": 131072,
+    "maxOutput": 32768,
+    "pricing": null,
+    "supportedFeatures": [
+      "streaming"
+    ]
+  },
+  {
+    "id": "qwen/qwen3-32b",
+    "name": "Qwen3 32B",
+    "provider": "groq",
+    "providerType": "cloud",
+    "isFree": true,
+    "maxTokens": 131072,
+    "maxOutput": 32768,
+    "pricing": null,
+    "supportedFeatures": [
+      "streaming"
+    ]
+  },
+  {
+    "id": "meta-llama/llama-3.3-70b-instruct:free",
+    "name": "Llama 3.3 70B",
+    "provider": "openrouter",
+    "providerType": "cloud",
+    "isFree": true,
+    "maxTokens": 128000,
+    "maxOutput": 128000,
+    "pricing": null,
+    "supportedFeatures": [
+      "streaming"
+    ]
+  },
+  {
+    "id": "deepseek/deepseek-chat-v3-0324:free",
+    "name": "DeepSeek V3",
+    "provider": "openrouter",
+    "providerType": "cloud",
+    "isFree": true,
+    "maxTokens": 131072,
+    "maxOutput": 32768,
+    "pricing": null,
+    "supportedFeatures": [
+      "streaming"
+    ]
+  },
+  {
+    "id": "deepseek/deepseek-r1-zero:free",
+    "name": "DeepSeek R1 Zero",
+    "provider": "openrouter",
+    "providerType": "cloud",
+    "isFree": true,
+    "maxTokens": 131072,
+    "maxOutput": 32768,
+    "pricing": null,
+    "supportedFeatures": [
+      "streaming",
+      "reasoning"
+    ]
+  },
+  {
+    "id": "mistralai/mistral-small-3.1-24b-instruct:free",
+    "name": "Mistral Small 3.1 24B",
+    "provider": "openrouter",
+    "providerType": "cloud",
+    "isFree": true,
+    "maxTokens": 96000,
+    "maxOutput": 32768,
+    "pricing": null,
+    "supportedFeatures": [
+      "streaming"
+    ]
+  }
+]

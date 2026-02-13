@@ -1,0 +1,89 @@
+'use client';
+
+import { useRef, useCallback } from 'react';
+import { Send, Square, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { useChatStore } from '@/store/chat-store';
+import { useModelStore } from '@/store/model-store';
+import { useStreamChat } from '@/hooks/use-stream-chat';
+import { SystemPromptEditor } from './system-prompt-editor';
+
+export function PromptInput() {
+  const prompt = useChatStore((s) => s.prompt);
+  const setPrompt = useChatStore((s) => s.setPrompt);
+  const systemPrompt = useChatStore((s) => s.systemPrompt);
+  const clearResponses = useChatStore((s) => s.clearResponses);
+  const selectedModelIds = useModelStore((s) => s.selectedModelIds);
+  const { startChat, cancelStream, isStreaming } = useStreamChat();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const canSend = prompt.trim().length > 0 && selectedModelIds.length > 0 && !isStreaming;
+
+  const handleSend = useCallback(() => {
+    if (!canSend) return;
+    startChat(prompt, systemPrompt, selectedModelIds);
+  }, [canSend, prompt, systemPrompt, selectedModelIds, startChat]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  return (
+    <div className="space-y-3 rounded-lg border bg-card p-4">
+      <SystemPromptEditor />
+      <div className="relative">
+        <Textarea
+          ref={textareaRef}
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={
+            selectedModelIds.length === 0
+              ? 'Select at least one model above to start...'
+              : 'Enter your prompt... (Enter to send, Shift+Enter for newline)'
+          }
+          disabled={selectedModelIds.length === 0}
+          className="min-h-[80px] resize-none pr-24"
+        />
+        <div className="absolute bottom-2 right-2 flex items-center gap-1">
+          {isStreaming ? (
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={cancelStream}
+              aria-label="Stop streaming"
+            >
+              <Square className="size-3" />
+              Stop
+            </Button>
+          ) : (
+            <>
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                onClick={clearResponses}
+                aria-label="Clear"
+                disabled={!prompt}
+              >
+                <Trash2 className="size-3.5" />
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSend}
+                disabled={!canSend}
+                aria-label="Send prompt"
+              >
+                <Send className="size-3.5" />
+                Send
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

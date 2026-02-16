@@ -1,6 +1,6 @@
 'use client';
 
-import { KeyRound, Layers, Send, Sparkles } from 'lucide-react';
+import { KeyRound, Layers, Send, Sparkles, ShieldCheck } from 'lucide-react';
 import { useT } from '@/store/locale-store';
 
 interface WelcomeGuideProps {
@@ -40,9 +40,10 @@ export function WelcomeGuide({ hasKeys, hasSelectedModels }: WelcomeGuideProps) 
 
       {/* Contextual hints */}
       {!hasKeys && (
-        <p className="mt-4 text-xs font-medium text-amber-600 dark:text-amber-400">
-          {t('guide.noKeys')}
-        </p>
+        <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+          <ShieldCheck className="size-3.5 shrink-0" />
+          <span>{t('guide.noKeys')}</span>
+        </div>
       )}
       {hasKeys && !hasSelectedModels && (
         <p className="mt-4 text-xs font-medium text-blue-600 dark:text-blue-400">

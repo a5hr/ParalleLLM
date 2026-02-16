@@ -226,19 +226,6 @@
     "providerType": "cloud",
     "isFree": true,
     "maxTokens": 128000,
-    "maxOutput": 128000,
-    "pricing": null,
-    "supportedFeatures": [
-      "streaming"
-    ]
-  },
-  {
-    "id": "deepseek/deepseek-chat-v3-0324:free",
-    "name": "DeepSeek V3",
-    "provider": "openrouter",
-    "providerType": "cloud",
-    "isFree": true,
-    "maxTokens": 131072,
     "maxOutput": 32768,
     "pricing": null,
     "supportedFeatures": [
@@ -246,12 +233,12 @@
     ]
   },
   {
-    "id": "deepseek/deepseek-r1-zero:free",
-    "name": "DeepSeek R1 Zero",
+    "id": "deepseek/deepseek-r1-0528:free",
+    "name": "DeepSeek R1",
     "provider": "openrouter",
     "providerType": "cloud",
     "isFree": true,
-    "maxTokens": 131072,
+    "maxTokens": 163840,
     "maxOutput": 32768,
     "pricing": null,
     "supportedFeatures": [

@@ -1,6 +1,7 @@
 import type { ChatRequest, StreamChunk } from '@/types/provider';
 import { getProviderForModel } from '@/lib/providers';
 import { resolveApiKey, markRateLimited, isServerKey } from '@/lib/api-keys';
+import { generateCacheKey, getCached, setCached } from '@/lib/response-cache';
 
 interface ParallelRequest {
   model: string;
@@ -10,7 +11,7 @@ interface ParallelRequest {
   baseUrl?: string;
 }
 
-const DEFAULT_TIMEOUT_MS = 60_000;
+const DEFAULT_TIMEOUT_MS = 120_000;
 const MAX_KEY_RETRIES = 3;
 
 export async function* executeParallel(
@@ -30,6 +31,32 @@ export async function* executeParallel(
     const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
 
     try {
+      // --- Cache check ---
+      const cacheKey = generateCacheKey(
+        req.request.messages,
+        req.model,
+        req.request.temperature
+      );
+      const cached = getCached(cacheKey);
+      if (cached) {
+        chunkQueue.push({
+          type: 'text',
+          content: cached.content,
+          model: req.model,
+          provider: cached.provider,
+          metadata: { cached: true },
+        });
+        chunkQueue.push({
+          type: 'done',
+          content: '',
+          model: req.model,
+          provider: cached.provider,
+          metadata: { cached: true },
+        });
+        resolveWait?.();
+        return;
+      }
+
       const provider = getProviderForModel(req.model, {
         provider: req.providerHint,
         baseUrl: req.baseUrl,
@@ -63,14 +90,30 @@ export async function* executeParallel(
         }
 
         try {
+          const usingServerKey = isServerKey(provider.name, apiKey, req.userApiKeys);
+          let accumulatedContent = '';
+
           for await (const chunk of provider.chatStream(
             { ...req.request, model: modelId },
             apiKey,
             controller.signal
           )) {
+            if (chunk.type === 'text') {
+              accumulatedContent += chunk.content;
+            }
             chunkQueue.push({ ...chunk, model: req.model });
             resolveWait?.();
           }
+
+          // Cache completed responses from server keys only
+          if (usingServerKey && accumulatedContent) {
+            setCached(cacheKey, {
+              content: accumulatedContent,
+              provider: provider.name,
+              cachedAt: Date.now(),
+            });
+          }
+
           return; // Success — exit retry loop
         } catch (error) {
           const is429 =

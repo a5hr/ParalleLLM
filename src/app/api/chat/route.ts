@@ -3,6 +3,7 @@ import { executeParallel } from '@/lib/streaming/multi-stream';
 import { createSSEStream } from '@/lib/streaming/sse-encoder';
 import { chatRequestSchema } from '@/lib/validation';
 import { checkRateLimit } from '@/lib/rate-limiter';
+import { defaultModels } from '@/lib/models';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
@@ -31,16 +32,23 @@ export async function POST(request: NextRequest) {
     const { messages, models, modelConfigs, temperature, maxTokens, apiKeys } = parsed.data;
 
     const configMap = new Map(modelConfigs?.map(c => [c.id, c]));
+    const modelMaxOutput = new Map(defaultModels.map(m => [m.id, m.maxOutput]));
 
     const requests = models.map(model => {
       const perModel = configMap.get(model);
+      const requestedMaxTokens = perModel?.maxTokens ?? maxTokens;
+      const serverMaxOutput = modelMaxOutput.get(model);
+      const safeMaxTokens = serverMaxOutput
+        ? Math.min(requestedMaxTokens, serverMaxOutput)
+        : requestedMaxTokens;
+
       return {
         model,
         request: {
           messages,
           model,
           temperature: perModel?.temperature ?? temperature,
-          maxTokens: perModel?.maxTokens ?? maxTokens,
+          maxTokens: safeMaxTokens,
         },
         userApiKeys: apiKeys,
         providerHint: perModel?.provider,

@@ -15,7 +15,7 @@ const modelConfigSchema = z.object({
 
 export const chatRequestSchema = z.object({
   messages: z.array(chatMessageSchema).min(1).max(100),
-  models: z.array(z.string()).min(1).max(4),
+  models: z.array(z.string()).min(1).max(10),
   modelConfigs: z.array(modelConfigSchema).optional(),
   temperature: z.number().min(0).max(2).optional().default(0.7),
   maxTokens: z.number().int().min(1).max(2_000_000).optional().default(4096),

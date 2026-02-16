@@ -1,6 +1,6 @@
 'use client';
 
-import { useModelStore } from '@/store/model-store';
+import { useModelStore, MAX_SELECTED_MODELS } from '@/store/model-store';
 import {
   providerColors,
   providerNames,
@@ -44,8 +44,8 @@ export function ModelSelector() {
     <div className="space-y-4 rounded-lg border bg-card p-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold">{t('models.title')}</h2>
-        <span className="text-xs text-muted-foreground">
-          {t('models.selected', { count: selectedModelIds.length })}
+        <span className={cn('text-xs', selectedModelIds.length >= MAX_SELECTED_MODELS ? 'text-orange-500 font-medium' : 'text-muted-foreground')}>
+          {t('models.selected', { count: selectedModelIds.length })} / {MAX_SELECTED_MODELS}
         </span>
       </div>
 
@@ -71,16 +71,20 @@ export function ModelSelector() {
                   <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     {providerModels.map((m) => {
                       const selected = selectedModelIds.includes(m.id);
+                      const atLimit = !selected && selectedModelIds.length >= MAX_SELECTED_MODELS;
                       return (
                         <button
                           key={m.id}
                           type="button"
+                          disabled={atLimit}
                           onClick={() => toggleModel(m.id)}
                           className={cn(
                             'group relative flex flex-col gap-2 rounded-lg border p-3 text-left transition-all',
                             selected
                               ? 'border-2 bg-accent/50 shadow-sm'
-                              : 'border-border bg-background hover:bg-accent/30 hover:border-muted-foreground/30'
+                              : atLimit
+                                ? 'border-border bg-muted/50 opacity-50 cursor-not-allowed'
+                                : 'border-border bg-background hover:bg-accent/30 hover:border-muted-foreground/30'
                           )}
                           style={selected ? { borderColor: color.hex } : undefined}
                         >
@@ -163,16 +167,20 @@ export function ModelSelector() {
               <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {providerModels.map((m) => {
                   const selected = selectedModelIds.includes(m.id);
+                  const atLimit = !selected && selectedModelIds.length >= MAX_SELECTED_MODELS;
                   return (
                     <button
                       key={m.id}
                       type="button"
+                      disabled={atLimit}
                       onClick={() => toggleModel(m.id)}
                       className={cn(
                         'group relative flex flex-col gap-2 rounded-lg border p-3 text-left transition-all',
                         selected
                           ? 'border-2 bg-accent/50 shadow-sm'
-                          : 'border-border bg-background hover:bg-accent/30 hover:border-muted-foreground/30'
+                          : atLimit
+                            ? 'border-border bg-muted/50 opacity-50 cursor-not-allowed'
+                            : 'border-border bg-background hover:bg-accent/30 hover:border-muted-foreground/30'
                       )}
                       style={selected ? { borderColor: color.hex } : undefined}
                     >

@@ -32,10 +32,14 @@ export function useStreamChat() {
 
       const modelConfigs = modelIds.map((id) => {
         const config = models.find((m) => m.id === id);
+        const maxTokens = Math.min(
+          config?.parameters.maxTokens ?? 4096,
+          config?.maxOutput ?? 4096
+        );
         return {
           id,
           temperature: config?.parameters.temperature ?? 0.7,
-          maxTokens: config?.parameters.maxTokens ?? 4096,
+          maxTokens,
           ...(config?.baseUrl ? { provider: config.provider, baseUrl: config.baseUrl } : {}),
         };
       });

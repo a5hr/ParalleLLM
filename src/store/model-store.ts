@@ -41,6 +41,8 @@ interface ModelState {
   removeLocalModels: (provider: string) => void;
 }
 
+export const MAX_SELECTED_MODELS = 10;
+
 const initialModels: ModelConfig[] = defaultModels.map((m) => ({
   id: m.id,
   name: m.name,
@@ -52,7 +54,7 @@ const initialModels: ModelConfig[] = defaultModels.map((m) => ({
   pricing: m.pricing,
   parameters: {
     temperature: 0.7,
-    maxTokens: m.maxTokens,
+    maxTokens: m.maxOutput,
   },
 }));
 
@@ -66,6 +68,9 @@ export const useModelStore = create<ModelState>()(
       toggleModel: (modelId) =>
         set((state) => {
           const isSelected = state.selectedModelIds.includes(modelId);
+          if (!isSelected && state.selectedModelIds.length >= MAX_SELECTED_MODELS) {
+            return state; // At limit — ignore
+          }
           return {
             selectedModelIds: isSelected
               ? state.selectedModelIds.filter((id) => id !== modelId)
@@ -132,7 +137,7 @@ export const useModelStore = create<ModelState>()(
     }),
     {
       name: 'parallellm-models',
-      version: 3,
+      version: 5,
       partialize: (state) => ({
         models: state.models,
         selectedModelIds: state.selectedModelIds,
@@ -161,6 +166,78 @@ export const useModelStore = create<ModelState>()(
             ...m,
             providerType: (m.providerType === ('free' as string) ? 'cloud' : m.providerType) as ModelConfig['providerType'],
           }));
+        }
+
+        if (version < 4 && models) {
+          // Cap parameters.maxTokens to maxOutput (was incorrectly using context window)
+          models = models.map((m) => {
+            const def = defaultMap.get(m.id);
+            const maxOutput = m.maxOutput ?? def?.maxOutput ?? 4096;
+            return {
+              ...m,
+              parameters: {
+                ...m.parameters,
+                maxTokens: Math.min(m.parameters.maxTokens, maxOutput),
+              },
+            };
+          });
+        }
+
+        if (version < 5) {
+          // Replace removed OpenRouter models and fix maxOutput values
+          const modelReplacements: Record<string, string> = {
+            'deepseek/deepseek-chat-v3-0324:free': 'deepseek/deepseek-r1-0528:free',
+            'deepseek/deepseek-r1-zero:free': 'deepseek/deepseek-r1-0528:free',
+          };
+
+          let selectedIds = state.selectedModelIds as string[] | undefined;
+          if (selectedIds) {
+            const replaced = new Set<string>();
+            selectedIds = selectedIds
+              .map((id) => modelReplacements[id] ?? id)
+              .filter((id) => {
+                if (replaced.has(id)) return false;
+                replaced.add(id);
+                return true;
+              });
+            state.selectedModelIds = selectedIds;
+          }
+
+          if (models) {
+            // Remove old models that no longer exist, add replacements from defaults
+            const removedIds = new Set(Object.keys(modelReplacements));
+            models = models.filter((m) => !removedIds.has(m.id));
+            // Sync maxOutput from defaults for all models
+            models = models.map((m) => {
+              const def = defaultMap.get(m.id);
+              if (!def) return m;
+              return {
+                ...m,
+                maxOutput: def.maxOutput,
+                parameters: {
+                  ...m.parameters,
+                  maxTokens: Math.min(m.parameters.maxTokens, def.maxOutput),
+                },
+              };
+            });
+            // Add new default models not yet in the list
+            const existingIds = new Set(models.map((m) => m.id));
+            for (const def of defaultModels) {
+              if (!existingIds.has(def.id)) {
+                models.push({
+                  id: def.id,
+                  name: def.name,
+                  provider: def.provider,
+                  providerType: def.providerType,
+                  enabled: true,
+                  isFree: def.isFree,
+                  maxOutput: def.maxOutput,
+                  pricing: def.pricing,
+                  parameters: { temperature: 0.7, maxTokens: def.maxOutput },
+                });
+              }
+            }
+          }
         }
 
         return { ...state, models };

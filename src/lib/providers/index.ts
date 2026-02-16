@@ -35,6 +35,17 @@ const modelProviderMap: Record<string, string> = Object.fromEntries(
   modelsData.map(m => [m.id, m.provider])
 );
 
+/** Map discontinued model IDs to their replacement */
+const modelAliases: Record<string, string> = {
+  'deepseek/deepseek-chat-v3-0324:free': 'deepseek/deepseek-r1-0528:free',
+  'deepseek/deepseek-r1-zero:free': 'deepseek/deepseek-r1-0528:free',
+};
+
+/** Resolve model alias — returns the canonical model ID */
+export function resolveModelId(modelId: string): string {
+  return modelAliases[modelId] ?? modelId;
+}
+
 export function getProviderForModel(
   modelId: string,
   options?: { provider?: string; baseUrl?: string }
@@ -48,16 +59,19 @@ export function getProviderForModel(
     return createCustomEndpointProvider(options.baseUrl, options.provider || 'local');
   }
 
-  if (modelId.startsWith('ollama/')) {
+  // Resolve aliases for discontinued models
+  const resolved = resolveModelId(modelId);
+
+  if (resolved.startsWith('ollama/')) {
     return getProvider('ollama');
   }
-  if (modelId.startsWith('custom/')) {
+  if (resolved.startsWith('custom/')) {
     return getProvider('custom');
   }
 
-  const providerName = modelProviderMap[modelId];
+  const providerName = modelProviderMap[resolved];
   if (!providerName) {
-    throw new Error(`Unknown model: ${modelId}`);
+    throw new Error(`Unknown model: ${resolved}`);
   }
   return getProvider(providerName);
 }

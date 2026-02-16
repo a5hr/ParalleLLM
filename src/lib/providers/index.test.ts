@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getProvider, getProviderForModel, providerRegistry } from './index';
+import { getProvider, getProviderForModel, providerRegistry, resolveModelId } from './index';
 
 describe('getProvider', () => {
   it('returns provider for known names', () => {
@@ -50,6 +50,24 @@ describe('getProviderForModel', () => {
 
   it('throws for unknown model ID', () => {
     expect(() => getProviderForModel('completely-unknown-model')).toThrow('Unknown model');
+  });
+
+  it('resolves deprecated model aliases to correct provider', () => {
+    // deepseek-chat-v3-0324:free → deepseek-r1-0528:free (openrouter)
+    expect(getProviderForModel('deepseek/deepseek-chat-v3-0324:free').name).toBe('openrouter');
+    expect(getProviderForModel('deepseek/deepseek-r1-zero:free').name).toBe('openrouter');
+  });
+});
+
+describe('resolveModelId', () => {
+  it('resolves deprecated models to replacements', () => {
+    expect(resolveModelId('deepseek/deepseek-chat-v3-0324:free')).toBe('deepseek/deepseek-r1-0528:free');
+    expect(resolveModelId('deepseek/deepseek-r1-zero:free')).toBe('deepseek/deepseek-r1-0528:free');
+  });
+
+  it('returns known models unchanged', () => {
+    expect(resolveModelId('deepseek/deepseek-r1-0528:free')).toBe('deepseek/deepseek-r1-0528:free');
+    expect(resolveModelId('gpt-5.2')).toBe('gpt-5.2');
   });
 });
 

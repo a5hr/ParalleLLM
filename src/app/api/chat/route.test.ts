@@ -17,8 +17,13 @@ describe('capMaxTokens', () => {
   });
 
   it('caps to FALLBACK_MAX_OUTPUT (4096) for unknown cloud model', () => {
-    // deepseek/deepseek-chat-v3-0324:free is NOT in defaultModels
-    expect(capMaxTokens(163840, 'deepseek/deepseek-chat-v3-0324:free', false)).toBe(4096);
+    expect(capMaxTokens(163840, 'nonexistent/some-model:free', false)).toBe(4096);
+  });
+
+  it('caps resolved alias model to its maxOutput', () => {
+    // Route resolves deepseek-chat-v3-0324:free → deepseek-r1-0528:free before calling capMaxTokens
+    // So capMaxTokens receives the resolved ID which IS in defaultModels (maxOutput: 32768)
+    expect(capMaxTokens(163840, 'deepseek/deepseek-r1-0528:free', false)).toBe(32768);
   });
 
   it('caps to FALLBACK_MAX_OUTPUT for any unknown model ID without baseUrl', () => {

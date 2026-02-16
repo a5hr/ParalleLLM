@@ -4,6 +4,7 @@ import { createSSEStream } from '@/lib/streaming/sse-encoder';
 import { chatRequestSchema } from '@/lib/validation';
 import { checkRateLimit } from '@/lib/rate-limiter';
 import { defaultModels } from '@/lib/models';
+import { resolveModelId } from '@/lib/providers';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
@@ -49,15 +50,17 @@ export async function POST(request: NextRequest) {
     const configMap = new Map(modelConfigs?.map(c => [c.id, c]));
 
     const requests = models.map(model => {
+      // Resolve deprecated model aliases (e.g. deepseek-chat-v3-0324 → deepseek-r1-0528)
+      const resolvedModel = resolveModelId(model);
       const perModel = configMap.get(model);
       const requestedMaxTokens = perModel?.maxTokens ?? maxTokens;
-      const safeMaxTokens = capMaxTokens(requestedMaxTokens, model, !!perModel?.baseUrl);
+      const safeMaxTokens = capMaxTokens(requestedMaxTokens, resolvedModel, !!perModel?.baseUrl);
 
       return {
-        model,
+        model: resolvedModel,
         request: {
           messages,
-          model,
+          model: resolvedModel,
           temperature: perModel?.temperature ?? temperature,
           maxTokens: safeMaxTokens,
         },

@@ -13,7 +13,13 @@ interface ParallelRequest {
 }
 
 const DEFAULT_TIMEOUT_MS = 120_000;
-const MAX_KEY_RETRIES = 3;
+const MAX_RETRIES = 3;
+const BACKOFF_BASE_MS = 2_000; // 2s, 4s, 8s
+const STAGGER_MS = 500; // delay between requests to the same provider
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export async function* executeParallel(
   requests: ParallelRequest[]
@@ -26,10 +32,16 @@ export async function* executeParallel(
 
   const consumeStream = async (
     req: ParallelRequest,
-    index: number
+    index: number,
+    staggerDelayMs: number
   ) => {
     const controller = abortControllers[index];
     const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+
+    // Stagger requests to the same provider to avoid burst 429s
+    if (staggerDelayMs > 0) {
+      await sleep(staggerDelayMs);
+    }
 
     try {
       // --- Cache check ---
@@ -73,8 +85,8 @@ export async function* executeParallel(
             ? req.model.replace('custom/', '')
             : req.model;
 
-      // Retry loop for rate-limit rotation (server keys only)
-      for (let attempt = 0; attempt <= MAX_KEY_RETRIES; attempt++) {
+      // Retry loop with exponential backoff for 429 errors
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         let apiKey: string;
         try {
           apiKey = resolveApiKey(provider.name, req.userApiKeys);
@@ -117,11 +129,14 @@ export async function* executeParallel(
 
           return; // Success — exit retry loop
         } catch (error) {
-          const serverKey = isServerKey(provider.name, apiKey, req.userApiKeys);
-
-          if (isRateLimitError(error) && serverKey && attempt < MAX_KEY_RETRIES) {
-            // Mark this key as rate-limited and retry with the next one
-            markRateLimited(provider.name);
+          if (isRateLimitError(error) && attempt < MAX_RETRIES) {
+            // Rotate server key if available
+            const usingServerKey = isServerKey(provider.name, apiKey, req.userApiKeys);
+            if (usingServerKey) {
+              markRateLimited(provider.name);
+            }
+            // Exponential backoff before retry
+            await sleep(BACKOFF_BASE_MS * Math.pow(2, attempt));
             continue;
           }
 
@@ -153,8 +168,21 @@ export async function* executeParallel(
     }
   };
 
-  // Start consuming all streams in parallel
-  requests.forEach((req, index) => consumeStream(req, index));
+  // Compute stagger delays: requests to the same provider get increasing delays
+  const providerCount = new Map<string, number>();
+  const staggerDelays = requests.map((req) => {
+    // Resolve provider name for stagger grouping
+    const providerName = req.providerHint
+      || (req.model.startsWith('ollama/') ? 'ollama'
+        : req.model.startsWith('custom/') ? 'custom'
+          : req.model);
+    const count = providerCount.get(providerName) ?? 0;
+    providerCount.set(providerName, count + 1);
+    return count * STAGGER_MS;
+  });
+
+  // Start consuming all streams in parallel (with stagger)
+  requests.forEach((req, index) => consumeStream(req, index, staggerDelays[index]));
 
   // Yield chunks from the queue as they arrive
   while (activeStreams > 0 || chunkQueue.length > 0) {

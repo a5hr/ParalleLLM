@@ -175,6 +175,8 @@ describe('executeParallel', () => {
   });
 
   it('retries with next key on 429 rate-limit error (server key)', async () => {
+    vi.useFakeTimers();
+
     let callCount = 0;
     const provider: LLMProvider = {
       name: 'openrouter',
@@ -183,12 +185,10 @@ describe('executeParallel', () => {
       async *chatStream(): AsyncIterable<StreamChunk> {
         callCount++;
         if (callCount === 1) {
-          // First call: 429 error (re-thrown by provider, not caught as error chunk)
           const err = new Error('429 Rate limit exceeded');
           (err as unknown as { status: number }).status = 429;
           throw err;
         }
-        // Second call: success
         yield { type: 'text', content: 'Success after retry', model: 'test', provider: 'openrouter' };
         yield { type: 'done', content: '', model: 'test', provider: 'openrouter' };
       },
@@ -198,40 +198,53 @@ describe('executeParallel', () => {
     };
 
     mockGetProviderForModel.mockReturnValue(provider);
-    mockIsServerKey.mockReturnValue(true); // server key — enables retry
+    mockIsServerKey.mockReturnValue(true);
     mockResolveApiKey
       .mockReturnValueOnce('key-1')
       .mockReturnValueOnce('key-2');
 
     const chunks: StreamChunk[] = [];
-    for await (const chunk of executeParallel([
-      {
-        model: 'test-model',
-        request: { messages: [{ role: 'user', content: 'hi' }], model: 'test-model' },
-      },
-    ])) {
-      chunks.push(chunk);
-    }
+    const collectPromise = (async () => {
+      for await (const chunk of executeParallel([
+        {
+          model: 'test-model',
+          request: { messages: [{ role: 'user', content: 'hi' }], model: 'test-model' },
+        },
+      ])) {
+        chunks.push(chunk);
+      }
+    })();
 
-    // Should have retried and succeeded
+    // Advance past the 2s backoff (BACKOFF_BASE_MS * 2^0 = 2000ms)
+    await vi.advanceTimersByTimeAsync(5000);
+    await collectPromise;
+
     const textChunks = chunks.filter((c) => c.type === 'text');
     expect(textChunks.length).toBe(1);
     expect(textChunks[0].content).toBe('Success after retry');
-
-    // markRateLimited should have been called for the first key
     expect(mockMarkRateLimited).toHaveBeenCalledWith('openrouter');
     expect(callCount).toBe(2);
+
+    vi.useRealTimers();
   });
 
-  it('does not retry 429 for user keys', async () => {
+  it('retries 429 for user keys with backoff (no key rotation)', async () => {
+    vi.useFakeTimers();
+
+    let callCount = 0;
     const provider: LLMProvider = {
       name: 'openrouter',
       type: 'cloud',
       requiresApiKey: true,
       async *chatStream(): AsyncIterable<StreamChunk> {
-        const err = new Error('429 Rate limit exceeded');
-        (err as unknown as { status: number }).status = 429;
-        throw err;
+        callCount++;
+        if (callCount === 1) {
+          const err = new Error('429 Rate limit exceeded');
+          (err as unknown as { status: number }).status = 429;
+          throw err;
+        }
+        yield { type: 'text', content: 'Success after retry', model: 'test', provider: 'openrouter' };
+        yield { type: 'done', content: '', model: 'test', provider: 'openrouter' };
       },
       async listModels() {
         return [];
@@ -239,22 +252,33 @@ describe('executeParallel', () => {
     };
 
     mockGetProviderForModel.mockReturnValue(provider);
-    mockIsServerKey.mockReturnValue(false); // user key — no retry
+    mockIsServerKey.mockReturnValue(false); // user key — retries with backoff but no key rotation
 
     const chunks: StreamChunk[] = [];
-    for await (const chunk of executeParallel([
-      {
-        model: 'test-model',
-        request: { messages: [{ role: 'user', content: 'hi' }], model: 'test-model' },
-      },
-    ])) {
-      chunks.push(chunk);
-    }
+    const collectPromise = (async () => {
+      for await (const chunk of executeParallel([
+        {
+          model: 'test-model',
+          request: { messages: [{ role: 'user', content: 'hi' }], model: 'test-model' },
+        },
+      ])) {
+        chunks.push(chunk);
+      }
+    })();
 
-    // Should produce error, not retry
-    const errorChunk = chunks.find((c) => c.type === 'error');
-    expect(errorChunk).toBeDefined();
-    expect(errorChunk!.content).toContain('429');
+    // Advance past the 2s backoff
+    await vi.advanceTimersByTimeAsync(5000);
+    await collectPromise;
+
+    // Should have retried and succeeded
+    const textChunks = chunks.filter((c) => c.type === 'text');
+    expect(textChunks.length).toBe(1);
+    expect(textChunks[0].content).toBe('Success after retry');
+
+    // markRateLimited should NOT be called for user keys
     expect(mockMarkRateLimited).not.toHaveBeenCalled();
+    expect(callCount).toBe(2);
+
+    vi.useRealTimers();
   });
 });

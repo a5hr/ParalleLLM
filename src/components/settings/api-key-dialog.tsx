@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye, EyeOff, Check, ExternalLink } from 'lucide-react';
+import { Eye, EyeOff, Check, ExternalLink, ShieldCheck } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -61,7 +61,8 @@ export function ApiKeyDialog({ open, onOpenChange }: ApiKeyDialogProps) {
       removeKey(provider);
     }
     setDrafts((prev) => {
-      const { [provider]: _, ...rest } = prev;
+      const { [provider]: _discarded, ...rest } = prev;
+      void _discarded;
       return rest;
     });
   };
@@ -78,6 +79,18 @@ export function ApiKeyDialog({ open, onOpenChange }: ApiKeyDialogProps) {
             {t('apiKeys.description')}
           </DialogDescription>
         </DialogHeader>
+
+        <div className="flex items-start gap-2 rounded-md bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 px-3 py-2">
+          <ShieldCheck className="size-4 text-green-600 dark:text-green-400 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-xs font-medium text-green-800 dark:text-green-300">
+              {t('apiKeys.trustBadge')}
+            </p>
+            <p className="text-[11px] text-green-700/80 dark:text-green-400/70 mt-0.5">
+              {t('apiKeys.trustDetail')}
+            </p>
+          </div>
+        </div>
 
         <div className="space-y-4 mt-2">
           {apiKeyProviders.map(({ id, placeholder, signupUrl, hint }) => {
@@ -114,9 +127,14 @@ export function ApiKeyDialog({ open, onOpenChange }: ApiKeyDialogProps) {
                     href={signupUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="ml-auto inline-flex items-center gap-0.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                    className={cn(
+                      'ml-auto inline-flex items-center gap-0.5 text-[11px] transition-colors',
+                      isFreeProvider
+                        ? 'font-medium text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
                   >
-                    {t('apiKeys.getKey')} <ExternalLink className="size-2.5" />
+                    {isFreeProvider ? t('apiKeys.getKeyFree') : t('apiKeys.getKey')} <ExternalLink className="size-2.5" />
                   </a>
                 </div>
                 <div className="flex gap-1.5">
@@ -171,10 +189,10 @@ export function ApiKeyDialog({ open, onOpenChange }: ApiKeyDialogProps) {
           })}
         </div>
 
-        <div className="space-y-1.5 mt-2 text-[11px] text-muted-foreground">
+        <div className="space-y-1.5 mt-2 text-xs text-muted-foreground">
           <p>{t('apiKeys.helpFree')}</p>
           <p>{t('apiKeys.helpLocal')}</p>
-          <p>{t('apiKeys.helpStorage')}</p>
+          <p>{t('apiKeys.helpDelete')}</p>
         </div>
       </DialogContent>
     </Dialog>

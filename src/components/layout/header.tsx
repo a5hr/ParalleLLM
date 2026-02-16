@@ -6,23 +6,22 @@ import { useUIStore } from '@/store/ui-store';
 import { useApiKeyStore } from '@/store/api-key-store';
 import { useLocaleStore, useT } from '@/store/locale-store';
 import { ApiKeyDialog } from '@/components/settings/api-key-dialog';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+
+const subscribeMounted = () => () => {};
+const getMounted = () => true;
+const getServerMounted = () => false;
 
 export function Header() {
   const { theme, setTheme } = useUIStore();
   const keys = useApiKeyStore((s) => s.keys);
   const setLocale = useLocaleStore((s) => s.setLocale);
   const { t, locale } = useT();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(subscribeMounted, getMounted, getServerMounted);
   const [keyDialogOpen, setKeyDialogOpen] = useState(false);
   const configuredCount = Object.values(keys).filter(Boolean).length;
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
     const root = document.documentElement;
     root.classList.remove('light', 'dark');
 
@@ -32,12 +31,11 @@ export function Header() {
     } else {
       root.classList.add(theme);
     }
-  }, [theme, mounted]);
+  }, [theme]);
 
   useEffect(() => {
-    if (!mounted) return;
     document.documentElement.lang = locale;
-  }, [locale, mounted]);
+  }, [locale]);
 
   const cycleTheme = () => {
     const order: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];

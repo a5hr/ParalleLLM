@@ -50,16 +50,19 @@ const en = {
 
   // API key dialog
   'apiKeys.title': 'API Keys',
-  'apiKeys.description': 'Enter API keys for each provider. Keys are stored in your browser only.',
+  'apiKeys.description': 'Enter your API keys to use cloud models. Your keys are safe here.',
+  'apiKeys.trustBadge': 'Keys are saved in your browser only',
+  'apiKeys.trustDetail': 'Stored in localStorage — never sent to external servers. Keys are used only for direct API calls to each provider.',
   'apiKeys.getKey': 'Get key',
+  'apiKeys.getKeyFree': 'Get free key',
   'apiKeys.paid': 'Paid',
   'apiKeys.free': 'Free',
   'apiKeys.save': 'Save',
   'apiKeys.showKey': 'Show key',
   'apiKeys.hideKey': 'Hide key',
-  'apiKeys.helpFree': 'Groq and OpenRouter offer free API access. Sign up and paste your key above.',
+  'apiKeys.helpFree': 'Groq and OpenRouter are completely free — no credit card needed. Just sign up, copy a key, and paste it above.',
   'apiKeys.helpLocal': 'For local models (Ollama, LM Studio), no key is needed — just start the server locally.',
-  'apiKeys.helpStorage': 'Keys are stored in your browser only and sent to your own server.',
+  'apiKeys.helpDelete': 'To remove a key, clear the field and press Enter. Keys are never transmitted or exposed externally.',
 
   // Response
   'response.copy': 'Copy response',
@@ -74,13 +77,20 @@ const en = {
 
   // Usage guidance
   'guide.welcome': 'Compare LLM responses side-by-side',
-  'guide.step1': '1. Set up API keys (click the key icon above)',
+  'guide.step1': '1. Set up API keys (click the key icon above — keys stay in your browser)',
   'guide.step2': '2. Select models to compare',
   'guide.step3': '3. Enter a prompt and hit Send',
-  'guide.freeHint': 'Groq and OpenRouter are free — no credit card required.',
+  'guide.freeHint': 'Groq and OpenRouter are free — no credit card, just a quick signup. All keys stay in your browser.',
   'guide.localHint': 'Running Ollama or LM Studio? Local models are auto-detected.',
   'guide.noModels': 'Select at least one model above to start comparing.',
-  'guide.noKeys': 'Set up an API key first to enable cloud models.',
+  'guide.noKeys': 'To use cloud models, add an API key (stored in your browser only, never shared).',
+
+  // Quick start
+  'quickstart.title': 'Compare LLM responses side-by-side',
+  'quickstart.step1': 'Set up API keys (key icon — stored in browser only)',
+  'quickstart.step2': 'Select models to compare',
+  'quickstart.step3': 'Enter a prompt and send',
+  'quickstart.hint': 'Groq & OpenRouter are free (no credit card). Local models (Ollama, LM Studio) are auto-detected. All keys stay in your browser.',
 
   // Language
   'lang.switch': 'Language',

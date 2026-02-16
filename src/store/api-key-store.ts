@@ -20,7 +20,8 @@ export const useApiKeyStore = create<ApiKeyState>()(
 
       removeKey: (provider) =>
         set((state) => {
-          const { [provider]: _, ...rest } = state.keys;
+          const { [provider]: _discarded, ...rest } = state.keys;
+          void _discarded;
           return { keys: rest };
         }),
 

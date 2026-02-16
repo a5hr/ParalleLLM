@@ -52,16 +52,19 @@ const ja: Record<TranslationKey, string> = {
 
   // API key dialog
   'apiKeys.title': 'API キー',
-  'apiKeys.description': '各プロバイダーの API キーを入力してください。キーはブラウザ内にのみ保存されます。',
+  'apiKeys.description': 'クラウドモデルを使うための API キーを入力してください。',
+  'apiKeys.trustBadge': 'キーはブラウザ内にのみ保存されます',
+  'apiKeys.trustDetail': 'localStorage に保存され、外部サーバーには一切送信されません。各プロバイダーへの API リクエスト時のみ使用されます。',
   'apiKeys.getKey': 'キー取得',
+  'apiKeys.getKeyFree': '無料キーを取得',
   'apiKeys.paid': '有料',
   'apiKeys.free': '無料',
   'apiKeys.save': '保存',
   'apiKeys.showKey': 'キーを表示',
   'apiKeys.hideKey': 'キーを隠す',
-  'apiKeys.helpFree': 'Groq と OpenRouter は無料で利用可能です。アカウント登録後、キーを貼り付けてください。',
+  'apiKeys.helpFree': 'Groq と OpenRouter は完全無料です。クレジットカード不要 — アカウント登録してキーを貼り付けるだけで使えます。',
   'apiKeys.helpLocal': 'ローカルモデル（Ollama, LM Studio）はキー不要です。サーバーを起動するだけで使えます。',
-  'apiKeys.helpStorage': 'キーはブラウザ内にのみ保存され、サーバーへはリクエスト時のみ送信されます。',
+  'apiKeys.helpDelete': 'キーを削除するには、入力欄を空にして Enter を押してください。キーが外部に送信・公開されることはありません。',
 
   // Response
   'response.copy': 'レスポンスをコピー',
@@ -76,13 +79,20 @@ const ja: Record<TranslationKey, string> = {
 
   // Usage guidance
   'guide.welcome': 'LLM のレスポンスを並べて比較',
-  'guide.step1': '1. API キーを設定（上の鍵アイコンをクリック）',
+  'guide.step1': '1. API キーを設定（上の鍵アイコン — キーはブラウザ内にのみ保存）',
   'guide.step2': '2. 比較したいモデルを選択',
   'guide.step3': '3. プロンプトを入力して送信',
-  'guide.freeHint': 'Groq と OpenRouter は無料で利用可能（クレジットカード不要）',
+  'guide.freeHint': 'Groq と OpenRouter は無料（カード不要、簡単登録）。キーはすべてブラウザ内に保存されます。',
   'guide.localHint': 'Ollama / LM Studio を起動中ならローカルモデルが自動検出されます',
   'guide.noModels': '上のモデルを1つ以上選択すると比較できます。',
-  'guide.noKeys': 'クラウドモデルを使うには、まず API キーを設定してください。',
+  'guide.noKeys': 'クラウドモデルを使うには API キーが必要です（ブラウザ内にのみ保存、外部送信なし）。',
+
+  // Quick start
+  'quickstart.title': 'LLM のレスポンスを並べて比較',
+  'quickstart.step1': 'API キーを設定（鍵アイコン — ブラウザ内にのみ保存）',
+  'quickstart.step2': '比較したいモデルを選択',
+  'quickstart.step3': 'プロンプトを入力して送信',
+  'quickstart.hint': 'Groq・OpenRouter は無料（カード不要）。Ollama / LM Studio はローカルモデルを自動検出。キーはすべてブラウザ内に保存されます。',
 
   // Language
   'lang.switch': '言語',

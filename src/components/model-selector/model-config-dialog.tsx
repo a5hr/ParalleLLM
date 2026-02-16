@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Slider } from '@/components/ui/slider';
 import { useModelStore } from '@/store/model-store';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useT } from '@/store/locale-store';
 
 interface ModelConfigDialogProps {
@@ -25,15 +25,18 @@ export function ModelConfigDialog({ modelId, open, onOpenChange }: ModelConfigDi
   const model = models.find((m) => m.id === modelId);
 
   const { t } = useT();
-  const [temperature, setTemperature] = useState(0.7);
-  const [maxTokens, setMaxTokens] = useState(4096);
+  const [temperature, setTemperature] = useState(model?.parameters.temperature ?? 0.7);
+  const [maxTokens, setMaxTokens] = useState(model?.parameters.maxTokens ?? 4096);
 
-  useEffect(() => {
+  // Reset local state when a different model is opened
+  const [prevModelId, setPrevModelId] = useState(modelId);
+  if (modelId !== prevModelId) {
+    setPrevModelId(modelId);
     if (model) {
       setTemperature(model.parameters.temperature);
       setMaxTokens(model.parameters.maxTokens);
     }
-  }, [model]);
+  }
 
   if (!model) return null;
 

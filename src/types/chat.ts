@@ -1,5 +1,3 @@
-import type { StreamChunk } from './provider';
-
 export interface TokenUsage {
   promptTokens: number;
   completionTokens: number;

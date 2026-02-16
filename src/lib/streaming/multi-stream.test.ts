@@ -1,0 +1,175 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { StreamChunk, LLMProvider } from '@/types/provider';
+
+// Mock dependencies before importing the module under test
+vi.mock('@/lib/providers', () => ({
+  getProviderForModel: vi.fn(),
+}));
+
+vi.mock('@/lib/api-keys', () => ({
+  resolveApiKey: vi.fn(),
+  markRateLimited: vi.fn(),
+  isServerKey: vi.fn(),
+}));
+
+vi.mock('@/lib/response-cache', () => ({
+  generateCacheKey: vi.fn(),
+  getCached: vi.fn(),
+  setCached: vi.fn(),
+}));
+
+import { getProviderForModel } from '@/lib/providers';
+import { resolveApiKey, isServerKey } from '@/lib/api-keys';
+import { generateCacheKey, getCached, setCached } from '@/lib/response-cache';
+import { executeParallel } from './multi-stream';
+
+const mockGetProviderForModel = vi.mocked(getProviderForModel);
+const mockResolveApiKey = vi.mocked(resolveApiKey);
+const mockIsServerKey = vi.mocked(isServerKey);
+const mockGenerateCacheKey = vi.mocked(generateCacheKey);
+const mockGetCached = vi.mocked(getCached);
+vi.mocked(setCached);
+
+function createMockProvider(name: string, chunks: StreamChunk[]): LLMProvider {
+  return {
+    name,
+    type: 'cloud',
+    requiresApiKey: true,
+    async *chatStream(): AsyncIterable<StreamChunk> {
+      for (const chunk of chunks) {
+        yield chunk;
+      }
+    },
+    async listModels() {
+      return [];
+    },
+  };
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mockGenerateCacheKey.mockReturnValue('cache-key');
+  mockGetCached.mockReturnValue(undefined);
+  mockResolveApiKey.mockReturnValue('test-key');
+  mockIsServerKey.mockReturnValue(true);
+});
+
+describe('executeParallel', () => {
+  it('streams chunks from two models in parallel', async () => {
+    const provider1 = createMockProvider('openai', [
+      { type: 'text', content: 'Hello from GPT', model: 'gpt', provider: 'openai' },
+      { type: 'done', content: '', model: 'gpt', provider: 'openai' },
+    ]);
+    const provider2 = createMockProvider('anthropic', [
+      { type: 'text', content: 'Hello from Claude', model: 'claude', provider: 'anthropic' },
+      { type: 'done', content: '', model: 'claude', provider: 'anthropic' },
+    ]);
+
+    mockGetProviderForModel
+      .mockReturnValueOnce(provider1)
+      .mockReturnValueOnce(provider2);
+    mockGenerateCacheKey
+      .mockReturnValueOnce('key-1')
+      .mockReturnValueOnce('key-2');
+
+    const chunks: StreamChunk[] = [];
+    for await (const chunk of executeParallel([
+      {
+        model: 'gpt-4o',
+        request: { messages: [{ role: 'user', content: 'hi' }], model: 'gpt-4o' },
+      },
+      {
+        model: 'claude-3-opus',
+        request: { messages: [{ role: 'user', content: 'hi' }], model: 'claude-3-opus' },
+      },
+    ])) {
+      chunks.push(chunk);
+    }
+
+    const textChunks = chunks.filter((c) => c.type === 'text');
+    const models = textChunks.map((c) => c.model);
+    expect(models).toContain('gpt-4o');
+    expect(models).toContain('claude-3-opus');
+  });
+
+  it('skips API call when cache hits', async () => {
+    mockGetCached.mockReturnValue({
+      content: 'cached response',
+      provider: 'openai',
+      cachedAt: Date.now(),
+    });
+
+    const chunks: StreamChunk[] = [];
+    for await (const chunk of executeParallel([
+      {
+        model: 'gpt-4o',
+        request: { messages: [{ role: 'user', content: 'hi' }], model: 'gpt-4o' },
+      },
+    ])) {
+      chunks.push(chunk);
+    }
+
+    // Should have received text + done from cache, no API call
+    expect(chunks.length).toBe(2);
+    expect(chunks[0].type).toBe('text');
+    expect(chunks[0].content).toBe('cached response');
+    expect(chunks[0].metadata?.cached).toBe(true);
+    expect(chunks[1].type).toBe('done');
+
+    // Provider should never be called
+    expect(mockGetProviderForModel).not.toHaveBeenCalled();
+  });
+
+  it('produces error chunk when resolveApiKey throws', async () => {
+    const provider = createMockProvider('openai', []);
+    mockGetProviderForModel.mockReturnValue(provider);
+    mockResolveApiKey.mockImplementation(() => {
+      throw new Error('No API key for "openai"');
+    });
+
+    const chunks: StreamChunk[] = [];
+    for await (const chunk of executeParallel([
+      {
+        model: 'gpt-4o',
+        request: { messages: [{ role: 'user', content: 'hi' }], model: 'gpt-4o' },
+      },
+    ])) {
+      chunks.push(chunk);
+    }
+
+    const errorChunk = chunks.find((c) => c.type === 'error');
+    expect(errorChunk).toBeDefined();
+    expect(errorChunk!.content).toContain('No API key');
+  });
+
+  it('produces error chunk when provider stream throws', async () => {
+    const provider: LLMProvider = {
+      name: 'openai',
+      type: 'cloud',
+      requiresApiKey: true,
+      async *chatStream(): AsyncIterable<StreamChunk> {
+        throw new Error('Connection timeout');
+      },
+      async listModels() {
+        return [];
+      },
+    };
+
+    mockGetProviderForModel.mockReturnValue(provider);
+    mockIsServerKey.mockReturnValue(false); // user key, no retry
+
+    const chunks: StreamChunk[] = [];
+    for await (const chunk of executeParallel([
+      {
+        model: 'gpt-4o',
+        request: { messages: [{ role: 'user', content: 'hi' }], model: 'gpt-4o' },
+      },
+    ])) {
+      chunks.push(chunk);
+    }
+
+    const errorChunk = chunks.find((c) => c.type === 'error');
+    expect(errorChunk).toBeDefined();
+    expect(errorChunk!.content).toContain('Connection timeout');
+  });
+});

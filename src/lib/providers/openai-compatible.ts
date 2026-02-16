@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import type { LLMProvider, ChatRequest, StreamChunk, ModelInfo, ProviderType } from '@/types/provider';
+import { isRateLimitError } from '@/lib/errors';
 
 interface OpenAICompatibleConfig {
   name: string;
@@ -51,6 +52,8 @@ export function createOpenAICompatibleProvider(config: OpenAICompatibleConfig): 
 
         yield { type: 'done', content: '', model: request.model, provider: config.name };
       } catch (error) {
+        // Let rate-limit errors propagate to multi-stream for key rotation retry
+        if (isRateLimitError(error)) throw error;
         const message = error instanceof Error ? error.message : 'Unknown error';
         yield { type: 'error', content: message, model: request.model, provider: config.name };
       }

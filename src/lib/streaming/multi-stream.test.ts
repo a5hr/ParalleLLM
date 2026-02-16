@@ -19,13 +19,14 @@ vi.mock('@/lib/response-cache', () => ({
 }));
 
 import { getProviderForModel } from '@/lib/providers';
-import { resolveApiKey, isServerKey } from '@/lib/api-keys';
+import { resolveApiKey, markRateLimited, isServerKey } from '@/lib/api-keys';
 import { generateCacheKey, getCached, setCached } from '@/lib/response-cache';
 import { executeParallel } from './multi-stream';
 
 const mockGetProviderForModel = vi.mocked(getProviderForModel);
 const mockResolveApiKey = vi.mocked(resolveApiKey);
 const mockIsServerKey = vi.mocked(isServerKey);
+const mockMarkRateLimited = vi.mocked(markRateLimited);
 const mockGenerateCacheKey = vi.mocked(generateCacheKey);
 const mockGetCached = vi.mocked(getCached);
 vi.mocked(setCached);
@@ -171,5 +172,89 @@ describe('executeParallel', () => {
     const errorChunk = chunks.find((c) => c.type === 'error');
     expect(errorChunk).toBeDefined();
     expect(errorChunk!.content).toContain('Connection timeout');
+  });
+
+  it('retries with next key on 429 rate-limit error (server key)', async () => {
+    let callCount = 0;
+    const provider: LLMProvider = {
+      name: 'openrouter',
+      type: 'cloud',
+      requiresApiKey: true,
+      async *chatStream(): AsyncIterable<StreamChunk> {
+        callCount++;
+        if (callCount === 1) {
+          // First call: 429 error (re-thrown by provider, not caught as error chunk)
+          const err = new Error('429 Rate limit exceeded');
+          (err as unknown as { status: number }).status = 429;
+          throw err;
+        }
+        // Second call: success
+        yield { type: 'text', content: 'Success after retry', model: 'test', provider: 'openrouter' };
+        yield { type: 'done', content: '', model: 'test', provider: 'openrouter' };
+      },
+      async listModels() {
+        return [];
+      },
+    };
+
+    mockGetProviderForModel.mockReturnValue(provider);
+    mockIsServerKey.mockReturnValue(true); // server key — enables retry
+    mockResolveApiKey
+      .mockReturnValueOnce('key-1')
+      .mockReturnValueOnce('key-2');
+
+    const chunks: StreamChunk[] = [];
+    for await (const chunk of executeParallel([
+      {
+        model: 'test-model',
+        request: { messages: [{ role: 'user', content: 'hi' }], model: 'test-model' },
+      },
+    ])) {
+      chunks.push(chunk);
+    }
+
+    // Should have retried and succeeded
+    const textChunks = chunks.filter((c) => c.type === 'text');
+    expect(textChunks.length).toBe(1);
+    expect(textChunks[0].content).toBe('Success after retry');
+
+    // markRateLimited should have been called for the first key
+    expect(mockMarkRateLimited).toHaveBeenCalledWith('openrouter');
+    expect(callCount).toBe(2);
+  });
+
+  it('does not retry 429 for user keys', async () => {
+    const provider: LLMProvider = {
+      name: 'openrouter',
+      type: 'cloud',
+      requiresApiKey: true,
+      async *chatStream(): AsyncIterable<StreamChunk> {
+        const err = new Error('429 Rate limit exceeded');
+        (err as unknown as { status: number }).status = 429;
+        throw err;
+      },
+      async listModels() {
+        return [];
+      },
+    };
+
+    mockGetProviderForModel.mockReturnValue(provider);
+    mockIsServerKey.mockReturnValue(false); // user key — no retry
+
+    const chunks: StreamChunk[] = [];
+    for await (const chunk of executeParallel([
+      {
+        model: 'test-model',
+        request: { messages: [{ role: 'user', content: 'hi' }], model: 'test-model' },
+      },
+    ])) {
+      chunks.push(chunk);
+    }
+
+    // Should produce error, not retry
+    const errorChunk = chunks.find((c) => c.type === 'error');
+    expect(errorChunk).toBeDefined();
+    expect(errorChunk!.content).toContain('429');
+    expect(mockMarkRateLimited).not.toHaveBeenCalled();
   });
 });

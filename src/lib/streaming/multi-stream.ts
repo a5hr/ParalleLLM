@@ -2,6 +2,7 @@ import type { ChatRequest, StreamChunk } from '@/types/provider';
 import { getProviderForModel } from '@/lib/providers';
 import { resolveApiKey, markRateLimited, isServerKey } from '@/lib/api-keys';
 import { generateCacheKey, getCached, setCached } from '@/lib/response-cache';
+import { isRateLimitError } from '@/lib/errors';
 
 interface ParallelRequest {
   model: string;
@@ -116,12 +117,9 @@ export async function* executeParallel(
 
           return; // Success — exit retry loop
         } catch (error) {
-          const is429 =
-            error instanceof Error &&
-            (error.message.includes('429') || error.message.toLowerCase().includes('rate limit'));
           const serverKey = isServerKey(provider.name, apiKey, req.userApiKeys);
 
-          if (is429 && serverKey && attempt < MAX_KEY_RETRIES) {
+          if (isRateLimitError(error) && serverKey && attempt < MAX_KEY_RETRIES) {
             // Mark this key as rate-limited and retry with the next one
             markRateLimited(provider.name);
             continue;

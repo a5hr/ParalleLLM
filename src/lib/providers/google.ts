@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { LLMProvider, ChatRequest, StreamChunk, ModelInfo } from '@/types/provider';
 import { getProviderModelInfos } from '@/lib/models';
+import { isRateLimitError } from '@/lib/errors';
 
 export const googleProvider: LLMProvider = {
   name: 'google',
@@ -53,6 +54,8 @@ export const googleProvider: LLMProvider = {
 
       yield { type: 'done', content: '', model: request.model, provider: 'google' };
     } catch (error) {
+      // Let rate-limit errors propagate to multi-stream for key rotation retry
+      if (isRateLimitError(error)) throw error;
       const message = error instanceof Error ? error.message : 'Unknown error';
       yield { type: 'error', content: message, model: request.model, provider: 'google' };
     }

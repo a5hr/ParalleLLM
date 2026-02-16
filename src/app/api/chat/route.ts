@@ -33,14 +33,19 @@ export async function POST(request: NextRequest) {
 
     const configMap = new Map(modelConfigs?.map(c => [c.id, c]));
     const modelMaxOutput = new Map(defaultModels.map(m => [m.id, m.maxOutput]));
+    const FALLBACK_MAX_OUTPUT = 4096;
 
     const requests = models.map(model => {
       const perModel = configMap.get(model);
       const requestedMaxTokens = perModel?.maxTokens ?? maxTokens;
       const serverMaxOutput = modelMaxOutput.get(model);
+      // Cap to known model limit, or fallback for unknown cloud models
+      // Custom/local models (with baseUrl) are trusted
       const safeMaxTokens = serverMaxOutput
         ? Math.min(requestedMaxTokens, serverMaxOutput)
-        : requestedMaxTokens;
+        : perModel?.baseUrl
+          ? requestedMaxTokens
+          : Math.min(requestedMaxTokens, FALLBACK_MAX_OUTPUT);
 
       return {
         model,

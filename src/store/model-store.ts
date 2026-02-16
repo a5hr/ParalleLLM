@@ -137,7 +137,7 @@ export const useModelStore = create<ModelState>()(
     }),
     {
       name: 'parallellm-models',
-      version: 5,
+      version: 6,
       partialize: (state) => ({
         models: state.models,
         selectedModelIds: state.selectedModelIds,
@@ -221,6 +221,63 @@ export const useModelStore = create<ModelState>()(
               };
             });
             // Add new default models not yet in the list
+            const existingIds = new Set(models.map((m) => m.id));
+            for (const def of defaultModels) {
+              if (!existingIds.has(def.id)) {
+                models.push({
+                  id: def.id,
+                  name: def.name,
+                  provider: def.provider,
+                  providerType: def.providerType,
+                  enabled: true,
+                  isFree: def.isFree,
+                  maxOutput: def.maxOutput,
+                  pricing: def.pricing,
+                  parameters: { temperature: 0.7, maxTokens: def.maxOutput },
+                });
+              }
+            }
+          }
+        }
+
+        if (version < 6) {
+          // Re-run model cleanup for users who were already at v5 before
+          // deepseek-chat-v3-0324:free and deepseek-r1-zero:free were removed
+          const staleModelIds = new Set([
+            'deepseek/deepseek-chat-v3-0324:free',
+            'deepseek/deepseek-r1-zero:free',
+          ]);
+          const replacementId = 'deepseek/deepseek-r1-0528:free';
+
+          let selectedIds = state.selectedModelIds as string[] | undefined;
+          if (selectedIds) {
+            const seen = new Set<string>();
+            selectedIds = selectedIds
+              .map((id) => staleModelIds.has(id) ? replacementId : id)
+              .filter((id) => {
+                if (seen.has(id)) return false;
+                seen.add(id);
+                return true;
+              });
+            state.selectedModelIds = selectedIds;
+          }
+
+          if (models) {
+            models = models.filter((m) => !staleModelIds.has(m.id));
+            // Sync maxOutput and cap maxTokens from defaults
+            models = models.map((m) => {
+              const def = defaultMap.get(m.id);
+              if (!def) return m;
+              return {
+                ...m,
+                maxOutput: def.maxOutput,
+                parameters: {
+                  ...m.parameters,
+                  maxTokens: Math.min(m.parameters.maxTokens, def.maxOutput),
+                },
+              };
+            });
+            // Add any missing default models
             const existingIds = new Set(models.map((m) => m.id));
             for (const def of defaultModels) {
               if (!existingIds.has(def.id)) {

@@ -33,6 +33,7 @@ export interface StreamChunk {
   metadata?: {
     tokensUsed?: number;
     latencyMs?: number;
+    cached?: boolean;
   };
 }
 

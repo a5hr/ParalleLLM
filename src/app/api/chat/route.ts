@@ -8,6 +8,21 @@ import { defaultModels } from '@/lib/models';
 export const runtime = 'nodejs';
 export const maxDuration = 120;
 
+const FALLBACK_MAX_OUTPUT = 4096;
+const modelMaxOutput = new Map(defaultModels.map(m => [m.id, m.maxOutput]));
+
+/** Cap maxTokens to the known model limit, or a safe fallback for unknown models */
+export function capMaxTokens(
+  requestedMaxTokens: number,
+  modelId: string,
+  hasBaseUrl: boolean
+): number {
+  const serverMaxOutput = modelMaxOutput.get(modelId);
+  if (serverMaxOutput) return Math.min(requestedMaxTokens, serverMaxOutput);
+  if (hasBaseUrl) return requestedMaxTokens; // Custom/local — trust the user
+  return Math.min(requestedMaxTokens, FALLBACK_MAX_OUTPUT); // Unknown cloud model
+}
+
 export async function POST(request: NextRequest) {
   try {
     const clientId = request.headers.get('x-forwarded-for') || 'anonymous';
@@ -32,20 +47,11 @@ export async function POST(request: NextRequest) {
     const { messages, models, modelConfigs, temperature, maxTokens, apiKeys } = parsed.data;
 
     const configMap = new Map(modelConfigs?.map(c => [c.id, c]));
-    const modelMaxOutput = new Map(defaultModels.map(m => [m.id, m.maxOutput]));
-    const FALLBACK_MAX_OUTPUT = 4096;
 
     const requests = models.map(model => {
       const perModel = configMap.get(model);
       const requestedMaxTokens = perModel?.maxTokens ?? maxTokens;
-      const serverMaxOutput = modelMaxOutput.get(model);
-      // Cap to known model limit, or fallback for unknown cloud models
-      // Custom/local models (with baseUrl) are trusted
-      const safeMaxTokens = serverMaxOutput
-        ? Math.min(requestedMaxTokens, serverMaxOutput)
-        : perModel?.baseUrl
-          ? requestedMaxTokens
-          : Math.min(requestedMaxTokens, FALLBACK_MAX_OUTPUT);
+      const safeMaxTokens = capMaxTokens(requestedMaxTokens, model, !!perModel?.baseUrl);
 
       return {
         model,

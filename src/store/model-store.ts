@@ -143,7 +143,13 @@ export const useModelStore = create<ModelState>()(
         selectedModelIds: state.selectedModelIds,
         localEndpoints: state.localEndpoints,
       }),
-      migrate: (persisted, version) => {
+      migrate: migrateModelState,
+    }
+  )
+);
+
+/** Exported for testing — zustand persist calls this on hydration */
+export function migrateModelState(persisted: unknown, version: number): Record<string, unknown> {
         const state = persisted as Record<string, unknown>;
         const defaultMap = new Map(defaultModels.map((m) => [m.id, m]));
         let models = state.models as ModelConfig[] | undefined;
@@ -298,7 +304,4 @@ export const useModelStore = create<ModelState>()(
         }
 
         return { ...state, models };
-      },
-    }
-  )
-);
+}

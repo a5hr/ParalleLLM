@@ -16,7 +16,7 @@ export const openaiProvider: LLMProvider = {
         {
           model: request.model,
           messages: request.messages,
-          temperature: request.temperature ?? 0.7,
+          ...(request.temperature != null ? { temperature: request.temperature } : {}),
           max_completion_tokens: request.maxTokens ?? 4096,
           stream: true,
         },

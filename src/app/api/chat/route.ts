@@ -11,6 +11,7 @@ export const maxDuration = 120;
 
 const FALLBACK_MAX_OUTPUT = 4096;
 const modelMaxOutput = new Map(defaultModels.map(m => [m.id, m.maxOutput]));
+export const fixedTemperatureModels = new Set(defaultModels.filter(m => !m.supportsTemperature).map(m => m.id));
 
 /** Cap maxTokens to the known model limit, or a safe fallback for unknown models */
 export function capMaxTokens(
@@ -56,12 +57,16 @@ export async function POST(request: NextRequest) {
       const requestedMaxTokens = perModel?.maxTokens ?? maxTokens;
       const safeMaxTokens = capMaxTokens(requestedMaxTokens, resolvedModel, !!perModel?.baseUrl);
 
+      const safeTemperature = fixedTemperatureModels.has(resolvedModel)
+        ? undefined
+        : (perModel?.temperature ?? temperature);
+
       return {
         model: resolvedModel,
         request: {
           messages,
           model: resolvedModel,
-          temperature: perModel?.temperature ?? temperature,
+          temperature: safeTemperature,
           maxTokens: safeMaxTokens,
         },
         userApiKeys: apiKeys,

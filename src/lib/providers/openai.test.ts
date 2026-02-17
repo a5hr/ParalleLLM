@@ -71,4 +71,50 @@ describe('openaiProvider', () => {
     expect(callArgs.max_completion_tokens).toBe(4096);
     expect(callArgs).not.toHaveProperty('max_tokens');
   });
+
+  it('omits temperature when not provided (fixed-temperature models)', async () => {
+    const asyncIterable = (async function* () {
+      yield { choices: [{ delta: { content: 'hi' } }] };
+    })();
+    mockCreate.mockResolvedValue(asyncIterable);
+
+    const chunks: StreamChunk[] = [];
+    for await (const chunk of openaiProvider.chatStream(
+      {
+        messages: [{ role: 'user', content: 'hi' }],
+        model: 'gpt-5-mini',
+        // temperature intentionally omitted (route.ts sets undefined for fixed-temp models)
+      },
+      'test-key',
+      new AbortController().signal
+    )) {
+      chunks.push(chunk);
+    }
+
+    const callArgs = mockCreate.mock.calls[0][0];
+    expect(callArgs).not.toHaveProperty('temperature');
+  });
+
+  it('sends temperature when explicitly provided', async () => {
+    const asyncIterable = (async function* () {
+      yield { choices: [{ delta: { content: 'hi' } }] };
+    })();
+    mockCreate.mockResolvedValue(asyncIterable);
+
+    const chunks: StreamChunk[] = [];
+    for await (const chunk of openaiProvider.chatStream(
+      {
+        messages: [{ role: 'user', content: 'hi' }],
+        model: 'gpt-5.2',
+        temperature: 0.7,
+      },
+      'test-key',
+      new AbortController().signal
+    )) {
+      chunks.push(chunk);
+    }
+
+    const callArgs = mockCreate.mock.calls[0][0];
+    expect(callArgs).toHaveProperty('temperature', 0.7);
+  });
 });

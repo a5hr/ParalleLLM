@@ -25,6 +25,7 @@
     "isFree": false,
     "maxTokens": 1047576,
     "maxOutput": 32768,
+    "supportsTemperature": false,
     "pricing": {
       "input": 0.25,
       "output": 2

@@ -9,6 +9,7 @@ export interface ModelDefinition {
   isFree: boolean;
   maxTokens: number;
   maxOutput: number;
+  supportsTemperature: boolean;
   pricing: {
     input: number;  // $ per 1M input tokens
     output: number; // $ per 1M output tokens
@@ -23,6 +24,7 @@ export const defaultModels: ModelDefinition[] = modelsData.map(m => ({
   isFree: m.isFree,
   maxTokens: m.maxTokens,
   maxOutput: m.maxOutput,
+  supportsTemperature: (m as Record<string, unknown>).supportsTemperature !== false,
   pricing: m.pricing,
 }));
 

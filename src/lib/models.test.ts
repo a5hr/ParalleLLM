@@ -92,6 +92,21 @@ describe('model definitions integrity', () => {
     }
   });
 
+  it('models with supportsTemperature=false exist and are flagged', () => {
+    const fixedTemp = defaultModels.filter((m) => !m.supportsTemperature);
+    expect(fixedTemp.length).toBeGreaterThan(0);
+    expect(fixedTemp.map((m) => m.id)).toContain('gpt-5-mini');
+  });
+
+  it('most models support temperature by default', () => {
+    const withTemp = defaultModels.filter((m) => m.supportsTemperature);
+    expect(withTemp.length).toBeGreaterThan(fixedTempCount());
+
+    function fixedTempCount() {
+      return defaultModels.filter((m) => !m.supportsTemperature).length;
+    }
+  });
+
   it('Groq models have maxOutput <= 8192 (API hard limit)', () => {
     const groqModels = defaultModels.filter((m) => m.provider === 'groq');
     expect(groqModels.length).toBeGreaterThan(0);

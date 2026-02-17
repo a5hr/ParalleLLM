@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { capMaxTokens } from './route';
+import { capMaxTokens, fixedTemperatureModels } from './route';
 
 describe('capMaxTokens', () => {
   it('caps to server maxOutput for known model (OpenRouter Llama)', () => {
@@ -37,5 +37,17 @@ describe('capMaxTokens', () => {
   it('still caps known model even with baseUrl', () => {
     // Known model ID overrides baseUrl trust
     expect(capMaxTokens(65536, 'meta-llama/llama-3.3-70b-instruct:free', true)).toBe(32768);
+  });
+});
+
+describe('fixedTemperatureModels', () => {
+  it('includes gpt-5-mini', () => {
+    expect(fixedTemperatureModels.has('gpt-5-mini')).toBe(true);
+  });
+
+  it('does not include models that support temperature', () => {
+    expect(fixedTemperatureModels.has('gpt-5.2')).toBe(false);
+    expect(fixedTemperatureModels.has('gpt-4o-mini')).toBe(false);
+    expect(fixedTemperatureModels.has('llama-3.3-70b-versatile')).toBe(false);
   });
 });

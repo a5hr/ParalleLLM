@@ -281,4 +281,49 @@ describe('executeParallel', () => {
 
     vi.useRealTimers();
   });
+
+  it('shows friendly error when 429 exhausts all retries', async () => {
+    vi.useFakeTimers();
+
+    const provider: LLMProvider = {
+      name: 'openrouter',
+      type: 'cloud',
+      requiresApiKey: true,
+      async *chatStream(): AsyncIterable<StreamChunk> {
+        const err = new Error('429 Rate limit exceeded');
+        (err as unknown as { status: number }).status = 429;
+        throw err;
+      },
+      async listModels() {
+        return [];
+      },
+    };
+
+    mockGetProviderForModel.mockReturnValue(provider);
+    mockIsServerKey.mockReturnValue(true);
+
+    const chunks: StreamChunk[] = [];
+    const collectPromise = (async () => {
+      for await (const chunk of executeParallel([
+        {
+          model: 'test-model',
+          request: { messages: [{ role: 'user', content: 'hi' }], model: 'test-model' },
+        },
+      ])) {
+        chunks.push(chunk);
+      }
+    })();
+
+    // Advance past all 5 attempts: 5s + 10s + 20s + 40s = 75s backoff + initial attempt
+    await vi.advanceTimersByTimeAsync(100_000);
+    await collectPromise;
+
+    const errorChunk = chunks.find((c) => c.type === 'error');
+    expect(errorChunk).toBeDefined();
+    expect(errorChunk!.content).toContain('Rate limited');
+    expect(errorChunk!.content).toContain('wait ~1 min');
+    expect(errorChunk!.content).toContain('429 Rate limit exceeded');
+
+    vi.useRealTimers();
+  });
 });

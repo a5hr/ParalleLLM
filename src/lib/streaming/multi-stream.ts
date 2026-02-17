@@ -13,7 +13,7 @@ interface ParallelRequest {
 }
 
 const DEFAULT_TIMEOUT_MS = 120_000;
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 4;
 const BACKOFF_BASE_MS = 5_000; // 5s, 10s, 20s — covers OpenRouter's 8 RPM window
 const STAGGER_MS = 1_500; // delay between requests to the same provider
 
@@ -140,8 +140,11 @@ export async function* executeParallel(
             continue;
           }
 
-          // Not retryable — propagate the error
-          const message = error instanceof Error ? error.message : 'Unknown error';
+          // Not retryable — propagate the error with a user-friendly message for 429
+          const raw = error instanceof Error ? error.message : 'Unknown error';
+          const message = isRateLimitError(error)
+            ? `Rate limited — free model quota exceeded. Please wait ~1 min and retry. (${raw})`
+            : raw;
           chunkQueue.push({
             type: 'error',
             content: message,

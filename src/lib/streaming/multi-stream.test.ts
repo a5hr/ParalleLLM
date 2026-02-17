@@ -215,8 +215,8 @@ describe('executeParallel', () => {
       }
     })();
 
-    // Advance past the 2s backoff (BACKOFF_BASE_MS * 2^0 = 2000ms)
-    await vi.advanceTimersByTimeAsync(5000);
+    // Advance past the 5s backoff (BACKOFF_BASE_MS * 2^0 = 5000ms)
+    await vi.advanceTimersByTimeAsync(8000);
     await collectPromise;
 
     const textChunks = chunks.filter((c) => c.type === 'text');
@@ -266,8 +266,8 @@ describe('executeParallel', () => {
       }
     })();
 
-    // Advance past the 2s backoff
-    await vi.advanceTimersByTimeAsync(5000);
+    // Advance past the 5s backoff (BACKOFF_BASE_MS * 2^0 = 5000ms)
+    await vi.advanceTimersByTimeAsync(8000);
     await collectPromise;
 
     // Should have retried and succeeded

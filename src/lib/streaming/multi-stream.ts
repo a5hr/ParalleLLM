@@ -14,8 +14,8 @@ interface ParallelRequest {
 
 const DEFAULT_TIMEOUT_MS = 120_000;
 const MAX_RETRIES = 3;
-const BACKOFF_BASE_MS = 2_000; // 2s, 4s, 8s
-const STAGGER_MS = 500; // delay between requests to the same provider
+const BACKOFF_BASE_MS = 5_000; // 5s, 10s, 20s — covers OpenRouter's 8 RPM window
+const STAGGER_MS = 1_500; // delay between requests to the same provider
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));

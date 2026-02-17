@@ -91,4 +91,15 @@ describe('model definitions integrity', () => {
       }
     }
   });
+
+  it('Groq models have maxOutput <= 8192 (API hard limit)', () => {
+    const groqModels = defaultModels.filter((m) => m.provider === 'groq');
+    expect(groqModels.length).toBeGreaterThan(0);
+    for (const model of groqModels) {
+      expect(
+        model.maxOutput,
+        `${model.id}: Groq maxOutput (${model.maxOutput}) must be <= 8192`
+      ).toBeLessThanOrEqual(8192);
+    }
+  });
 });

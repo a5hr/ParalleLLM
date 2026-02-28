@@ -37,7 +37,7 @@ const en = {
 
   // Prompt input
   'prompt.placeholderNoModel': 'Select at least one model above to start...',
-  'prompt.placeholder': 'Enter your prompt... (Enter to send, Shift+Enter for newline)',
+  'prompt.placeholder': 'Ask a question or give an instruction... (Enter to send, Shift+Enter for newline)',
   'prompt.stop': 'Stop',
   'prompt.send': 'Send',
   'prompt.clear': 'Clear',
@@ -46,7 +46,7 @@ const en = {
 
   // System prompt
   'systemPrompt.label': 'System Prompt',
-  'systemPrompt.placeholder': 'Enter system prompt (optional)...',
+  'systemPrompt.placeholder': 'Set model behavior (e.g., You are an expert in... / Reply in JSON format)',
 
   // API key dialog
   'apiKeys.title': 'API Keys',
@@ -69,6 +69,8 @@ const en = {
   'response.streaming': 'Streaming...',
   'response.waiting': 'Waiting for response...',
   'response.tokens': '{count} tokens',
+  'response.thinking': 'Thinking...',
+  'response.thinkingChars': 'Thinking ({count} chars)',
 
   // Connection status
   'connection.connected': 'connected',
@@ -94,6 +96,12 @@ const en = {
 
   // Language
   'lang.switch': 'Language',
+
+  // Trial Models
+  'trial.privacyTitle': '',
+  'trial.privacyDesc': 'Your prompts and chat history are never saved to our servers or used for AI training.',
+  'trial.coldStartTitle': 'Initial Load Time: ',
+  'trial.coldStartDesc': 'Open Weights models load cloud GPUs on-demand upon the first request. The first prompt will take about 1 to 3 minutes, but subsequent responses will be instantaneous.',
 } as const;
 
 export type TranslationKey = keyof typeof en;

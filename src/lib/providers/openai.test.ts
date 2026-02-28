@@ -95,6 +95,32 @@ describe('openaiProvider', () => {
     expect(callArgs).not.toHaveProperty('temperature');
   });
 
+  it('yields reasoning chunks from reasoning_content delta', async () => {
+    const asyncIterable = (async function* () {
+      yield { choices: [{ delta: { reasoning_content: 'Let me think...' } }] };
+      yield { choices: [{ delta: { content: 'The answer' } }] };
+    })();
+    mockCreate.mockResolvedValue(asyncIterable);
+
+    const chunks: StreamChunk[] = [];
+    for await (const chunk of openaiProvider.chatStream(
+      {
+        messages: [{ role: 'user', content: 'hi' }],
+        model: 'gpt-5.2',
+      },
+      'test-key',
+      new AbortController().signal
+    )) {
+      chunks.push(chunk);
+    }
+
+    expect(chunks[0].type).toBe('reasoning');
+    expect(chunks[0].content).toBe('Let me think...');
+    expect(chunks[1].type).toBe('text');
+    expect(chunks[1].content).toBe('The answer');
+    expect(chunks[2].type).toBe('done');
+  });
+
   it('sends temperature when explicitly provided', async () => {
     const asyncIterable = (async function* () {
       yield { choices: [{ delta: { content: 'hi' } }] };

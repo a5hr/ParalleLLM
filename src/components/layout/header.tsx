@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { Moon, Sun, Monitor, KeyRound, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUIStore } from '@/store/ui-store';
@@ -53,10 +54,11 @@ export function Header() {
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
       <div className="container mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
-            P
+          <Image src="/logo.svg" alt="ParallelLM" width={32} height={32} />
+          <div className="flex items-baseline gap-2">
+            <h1 className="text-lg font-semibold tracking-tight">ParallelLM</h1>
+            <span className="hidden sm:inline text-xs text-muted-foreground">Ask once, compare all</span>
           </div>
-          <h1 className="text-lg font-semibold tracking-tight">ParallelLM</h1>
         </div>
 
         <div className="flex items-center gap-1">

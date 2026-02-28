@@ -42,6 +42,9 @@ cp .env.example .env.local
 `.env.local` に API キーを設定（使いたいプロバイダーだけでOK）:
 
 ```bash
+# アナリティクス (必須)
+NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
+
 # Cloud (有料)
 OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
@@ -54,6 +57,10 @@ OPENROUTER_API_KEY=sk-or-...
 # ローカル LLM (オプション)
 OLLAMA_BASE_URL=http://localhost:11434/v1
 LMSTUDIO_BASE_URL=http://localhost:1234/v1
+
+# トライアルサーバー (Serverless GPU等)
+TRIAL_LLM_BASE_URL=https://your-workspace-name--parallellm-trial-server-vllmserver-chat-completions.modal.run
+TRIAL_LLM_API_KEY=my-super-secret-token-1234
 ```
 
 API キーはアプリ内の設定画面（ヘッダーの鍵アイコン）からも入力できます。
@@ -148,12 +155,32 @@ npx vercel deploy --prod
 
 Vercel に GitHub リポジトリを連携すると、`main` ブランチへの push で自動デプロイされます。
 
+### トライアルサーバー (Modal / Serverless GPU) のデプロイ
+
+本番環境向けに、OSS LLM をセキュアかつ格安（Scale-to-Zero）で提供できるトライアル用のバックエンドスクリプトを用意しています。`scripts/modal/vllm_server.py` を使用します。
+
+1. [Modal](https://modal.com/) アカウントを作成し、CLI ツールでログイン。
+   ```bash
+   pip install modal
+   modal setup
+   ```
+2. エンドポイントを保護するシークレットキーを作成（任意のパスワードを指定）。
+   ```bash
+   modal secret create custom-llm-auth-secret TRIAL_LLM_API_KEY=my-super-secret-token-1234
+   ```
+3. スクリプトをデプロイ。
+   ```bash
+   modal deploy scripts/modal/vllm_server.py
+   ```
+4. ターミナルに出力された Web Endpoint URL を Vercel の `TRIAL_LLM_BASE_URL` に設定し、手順2で決めたパスワードを `TRIAL_LLM_API_KEY` に設定します。
+
 ### 環境変数 (Vercel)
 
 Vercel ダッシュボードの Settings > Environment Variables で設定:
 
 | 変数名 | 必須 | 備考 |
 |--------|------|------|
+| `NEXT_PUBLIC_GA_ID` | Yes | Google Analytics Measurement ID (UIの描画等に関わるため必須) |
 | `OPENAI_API_KEY` | 任意 | ユーザーがアプリ内で入力も可 |
 | `ANTHROPIC_API_KEY` | 任意 | 同上 |
 | `GOOGLE_API_KEY` | 任意 | 同上 |

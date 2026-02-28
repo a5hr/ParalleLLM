@@ -52,6 +52,15 @@ export async function* executeParallel(
       );
       const cached = getCached(cacheKey);
       if (cached) {
+        if (cached.reasoning) {
+          chunkQueue.push({
+            type: 'reasoning',
+            content: cached.reasoning,
+            model: req.model,
+            provider: cached.provider,
+            metadata: { cached: true },
+          });
+        }
         chunkQueue.push({
           type: 'text',
           content: cached.content,
@@ -105,6 +114,7 @@ export async function* executeParallel(
         try {
           const usingServerKey = isServerKey(provider.name, apiKey, req.userApiKeys);
           let accumulatedContent = '';
+          let accumulatedReasoning = '';
 
           for await (const chunk of provider.chatStream(
             { ...req.request, model: modelId },
@@ -113,6 +123,8 @@ export async function* executeParallel(
           )) {
             if (chunk.type === 'text') {
               accumulatedContent += chunk.content;
+            } else if (chunk.type === 'reasoning') {
+              accumulatedReasoning += chunk.content;
             }
             chunkQueue.push({ ...chunk, model: req.model });
             resolveWait?.();
@@ -122,6 +134,7 @@ export async function* executeParallel(
           if (usingServerKey && accumulatedContent) {
             setCached(cacheKey, {
               content: accumulatedContent,
+              ...(accumulatedReasoning ? { reasoning: accumulatedReasoning } : {}),
               provider: provider.name,
               cachedAt: Date.now(),
             });

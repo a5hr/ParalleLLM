@@ -8,6 +8,7 @@ export interface ModelResponse {
   modelId: string;
   provider: string;
   content: string;
+  reasoning?: string;
   status: 'idle' | 'streaming' | 'done' | 'error';
   error?: string;
   usage?: TokenUsage;

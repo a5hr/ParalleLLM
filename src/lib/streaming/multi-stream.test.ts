@@ -121,6 +121,64 @@ describe('executeParallel', () => {
     expect(mockGetProviderForModel).not.toHaveBeenCalled();
   });
 
+  it('passes reasoning chunks through to output', async () => {
+    const provider = createMockProvider('openai', [
+      { type: 'reasoning', content: 'Let me think...', model: 'gpt', provider: 'openai' },
+      { type: 'text', content: 'The answer is 42', model: 'gpt', provider: 'openai' },
+      { type: 'done', content: '', model: 'gpt', provider: 'openai' },
+    ]);
+
+    mockGetProviderForModel.mockReturnValue(provider);
+
+    const chunks: StreamChunk[] = [];
+    for await (const chunk of executeParallel([
+      {
+        model: 'gpt-5.2',
+        request: { messages: [{ role: 'user', content: 'hi' }], model: 'gpt-5.2' },
+      },
+    ])) {
+      chunks.push(chunk);
+    }
+
+    const reasoningChunks = chunks.filter((c) => c.type === 'reasoning');
+    expect(reasoningChunks.length).toBe(1);
+    expect(reasoningChunks[0].content).toBe('Let me think...');
+
+    const textChunks = chunks.filter((c) => c.type === 'text');
+    expect(textChunks.length).toBe(1);
+    expect(textChunks[0].content).toBe('The answer is 42');
+  });
+
+  it('includes reasoning in cache and replays on hit', async () => {
+    mockGetCached.mockReturnValue({
+      content: 'cached answer',
+      reasoning: 'cached thinking',
+      provider: 'openai',
+      cachedAt: Date.now(),
+    });
+
+    const chunks: StreamChunk[] = [];
+    for await (const chunk of executeParallel([
+      {
+        model: 'gpt-5.2',
+        request: { messages: [{ role: 'user', content: 'hi' }], model: 'gpt-5.2' },
+      },
+    ])) {
+      chunks.push(chunk);
+    }
+
+    // Should have reasoning + text + done from cache
+    expect(chunks.length).toBe(3);
+    expect(chunks[0].type).toBe('reasoning');
+    expect(chunks[0].content).toBe('cached thinking');
+    expect(chunks[0].metadata?.cached).toBe(true);
+    expect(chunks[1].type).toBe('text');
+    expect(chunks[1].content).toBe('cached answer');
+    expect(chunks[2].type).toBe('done');
+
+    expect(mockGetProviderForModel).not.toHaveBeenCalled();
+  });
+
   it('produces error chunk when resolveApiKey throws', async () => {
     const provider = createMockProvider('openai', []);
     mockGetProviderForModel.mockReturnValue(provider);

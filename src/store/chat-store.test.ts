@@ -108,6 +108,32 @@ describe('chat-store', () => {
     });
   });
 
+  describe('appendReasoning', () => {
+    it('accumulates reasoning for a model', () => {
+      useChatStore.getState().startStream(['model-a']);
+      useChatStore.getState().appendReasoning('model-a', 'Let me think');
+      useChatStore.getState().appendReasoning('model-a', ' about this');
+
+      expect(useChatStore.getState().responses['model-a'].reasoning).toBe('Let me think about this');
+    });
+
+    it('does nothing for non-existent model', () => {
+      useChatStore.getState().startStream(['model-a']);
+      useChatStore.getState().appendReasoning('model-z', 'text');
+
+      expect(useChatStore.getState().responses['model-z']).toBeUndefined();
+    });
+  });
+
+  describe('startStream reasoning initialization', () => {
+    it('initializes empty reasoning for all models', () => {
+      useChatStore.getState().startStream(['model-a']);
+
+      const resp = useChatStore.getState().responses['model-a'];
+      expect(resp.reasoning).toBe('');
+    });
+  });
+
   describe('clearResponses', () => {
     it('resets all state', () => {
       useChatStore.getState().setPrompt('test prompt');

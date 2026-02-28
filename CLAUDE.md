@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ユーザーとのやり取りは**常に日本語**で行う。コミットメッセージやコード内コメントは英語。
 
+## Tech Stack
+
+Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS 4 + shadcn/ui + Zustand
+
 ## コマンド
 
 ```bash
@@ -29,6 +33,8 @@ pnpm update-models    # プロバイダーAPIからモデル定義を更新
 4. `pnpm build`
 
 push前に `git status` でテストが依存するソースファイルが全てコミット済みか確認する。push後は `gh run watch` でCI greenを確認し、失敗時は `gh run view --log-failed` でログを確認して修正する。
+
+**注**: Husky + lint-staged によりコミット時に変更ファイルへの lint が自動実行される。
 
 ## アーキテクチャ
 

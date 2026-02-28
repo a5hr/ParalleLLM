@@ -13,6 +13,9 @@ const defaultCustomProvider = createCustomEndpointProvider(
   process.env.CUSTOM_LLM_BASE_URL || 'http://localhost:8080/v1'
 );
 
+import { createTrialProvider } from './trial';
+const trialProvider = createTrialProvider();
+
 export const providerRegistry = new Map<string, LLMProvider>([
   ['openai', openaiProvider],
   ['anthropic', anthropicProvider],
@@ -21,6 +24,7 @@ export const providerRegistry = new Map<string, LLMProvider>([
   ['openrouter', openrouterProvider],
   ['ollama', ollamaProvider],
   ['custom', defaultCustomProvider],
+  ['trial', trialProvider],
 ]);
 
 export function getProvider(name: string): LLMProvider {
@@ -67,6 +71,9 @@ export function getProviderForModel(
   }
   if (resolved.startsWith('custom/')) {
     return getProvider('custom');
+  }
+  if (resolved.startsWith('trial/')) {
+    return getProvider('trial');
   }
 
   const providerName = modelProviderMap[resolved];

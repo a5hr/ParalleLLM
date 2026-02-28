@@ -11,6 +11,7 @@ export function useStreamChat() {
   const {
     startStream,
     appendContent,
+    appendReasoning,
     completeResponse,
     setError,
     updateResponse,
@@ -67,8 +68,15 @@ export function useStreamChat() {
 
         if (!response.ok) {
           const errText = await response.text();
+          let parsedError = null;
+          try {
+            parsedError = JSON.parse(errText);
+          } catch {
+            // Ignored
+          }
+
           for (const id of modelIds) {
-            setError(id, `HTTP ${response.status}: ${errText}`);
+            setError(id, parsedError?.error ? `Error: ${parsedError.error}` : `HTTP ${response.status}: ${errText}`);
           }
           return;
         }
@@ -110,6 +118,9 @@ export function useStreamChat() {
                 if (chunk.type === 'text') {
                   updateResponse(chunk.model, { provider: chunk.provider });
                   appendContent(chunk.model, chunk.content);
+                } else if (chunk.type === 'reasoning') {
+                  updateResponse(chunk.model, { provider: chunk.provider });
+                  appendReasoning(chunk.model, chunk.content);
                 } else if (chunk.type === 'done') {
                   const tokens = chunk.metadata?.tokensUsed;
                   const latency = chunk.metadata?.latencyMs;
@@ -146,7 +157,7 @@ export function useStreamChat() {
         }
       }
     },
-    [startStream, appendContent, completeResponse, setError, updateResponse, models, apiKeys]
+    [startStream, appendContent, appendReasoning, completeResponse, setError, updateResponse, models, apiKeys]
   );
 
   return { startChat, cancelStream, isStreaming };

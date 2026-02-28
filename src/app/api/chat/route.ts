@@ -3,15 +3,23 @@ import { executeParallel } from '@/lib/streaming/multi-stream';
 import { createSSEStream } from '@/lib/streaming/sse-encoder';
 import { chatRequestSchema } from '@/lib/validation';
 import { checkRateLimit } from '@/lib/rate-limiter';
+import { checkTrialRateLimit } from '@/lib/rate-limiter-trial';
 import { defaultModels } from '@/lib/models';
 import { resolveModelId } from '@/lib/providers';
+import modelsData from '../../../../data/models.json';
 
 export const runtime = 'nodejs';
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 const FALLBACK_MAX_OUTPUT = 4096;
 const modelMaxOutput = new Map(defaultModels.map(m => [m.id, m.maxOutput]));
 export const fixedTemperatureModels = new Set(defaultModels.filter(m => !m.supportsTemperature).map(m => m.id));
+
+export const thinkingModels = new Set(
+  modelsData
+    .filter(m => m.supportedFeatures.some(f => f === 'reasoning' || f === 'extended-thinking'))
+    .map(m => m.id)
+);
 
 /** Cap maxTokens to the known model limit, or a safe fallback for unknown models */
 export function capMaxTokens(
@@ -48,6 +56,21 @@ export async function POST(request: NextRequest) {
 
     const { messages, models, modelConfigs, temperature, maxTokens, apiKeys } = parsed.data;
 
+    const hasTrialModels = models.some(model => {
+      const resolved = resolveModelId(model);
+      return defaultModels.find(m => m.id === resolved)?.provider === 'trial';
+    });
+
+    if (hasTrialModels) {
+      const trialRateLimit = checkTrialRateLimit(clientId);
+      if (!trialRateLimit.allowed) {
+        return Response.json(
+          { error: 'Trial limit exceeded', code: 'TRIAL_LIMIT_REACHED', retryAfterMs: trialRateLimit.retryAfterMs },
+          { status: 429 }
+        );
+      }
+    }
+
     const configMap = new Map(modelConfigs?.map(c => [c.id, c]));
 
     const requests = models.map(model => {
@@ -61,6 +84,8 @@ export async function POST(request: NextRequest) {
         ? undefined
         : (perModel?.temperature ?? temperature);
 
+      const isThinkingModel = thinkingModels.has(resolvedModel);
+
       return {
         model: resolvedModel,
         request: {
@@ -68,6 +93,7 @@ export async function POST(request: NextRequest) {
           model: resolvedModel,
           temperature: safeTemperature,
           maxTokens: safeMaxTokens,
+          ...(isThinkingModel ? { thinking: true } : {}),
         },
         userApiKeys: apiKeys,
         providerHint: perModel?.provider,

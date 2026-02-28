@@ -9,9 +9,10 @@ import {
 } from '@/lib/models';
 import { ModelConfigDialog } from './model-config-dialog';
 import { LocalModelsSection } from './local-models-section';
+import { PrivacyNotice } from '@/components/common/privacy-notice';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { Settings2, Check, Zap, DollarSign, MessageSquare } from 'lucide-react';
+import { Settings2, Check, Zap, DollarSign, MessageSquare, Info } from 'lucide-react';
 import { useT } from '@/store/locale-store';
 
 export function ModelSelector() {
@@ -49,6 +50,8 @@ export function ModelSelector() {
         </span>
       </div>
 
+      <PrivacyNotice />
+
       {/* Cloud section */}
       {(() => {
         const cloudProviders = getProviders('cloud');
@@ -68,6 +71,14 @@ export function ModelSelector() {
                     <span className="inline-block size-2 rounded-full shrink-0" style={{ backgroundColor: color.hex }} />
                     <span className="text-xs font-semibold" style={{ color: color.hex }}>{name}</span>
                   </div>
+                  {provider === 'trial' && (
+                    <div className="flex items-start gap-2 rounded-md bg-amber-50/50 dark:bg-amber-950/20 px-3 py-2 text-xs text-amber-700 dark:text-amber-300 border border-amber-200/50 dark:border-amber-900/50">
+                      <Info className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                      <div className="flex-1 leading-relaxed">
+                        <strong>{t('trial.coldStartTitle')}</strong>{t('trial.coldStartDesc')}
+                      </div>
+                    </div>
+                  )}
                   <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     {providerModels.map((m) => {
                       const selected = selectedModelIds.includes(m.id);

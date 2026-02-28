@@ -21,6 +21,13 @@ describe('encodeSSE', () => {
     const result = encodeSSE('done', {});
     expect(result).toBe('event: done\ndata: {}\n\n');
   });
+
+  it('formats reasoning chunk as chunk event', () => {
+    const result = encodeSSE('chunk', { type: 'reasoning', content: 'thinking...' });
+    expect(result).toBe(
+      'event: chunk\ndata: {"type":"reasoning","content":"thinking..."}\n\n'
+    );
+  });
 });
 
 describe('createSSEStream', () => {
@@ -91,6 +98,31 @@ describe('createSSEStream', () => {
     const lastEventIndex = output.lastIndexOf('event: done');
     const lastChunkIndex = output.lastIndexOf('event: chunk');
     expect(lastEventIndex).toBeGreaterThan(lastChunkIndex);
+  });
+
+  it('encodes reasoning chunks with chunk event type', async () => {
+    async function* source(): AsyncIterable<StreamChunk> {
+      yield { type: 'reasoning', content: 'Let me think', model: 'test', provider: 'test' };
+      yield { type: 'text', content: 'Answer', model: 'test', provider: 'test' };
+      yield { type: 'done', content: '', model: 'test', provider: 'test' };
+    }
+
+    const stream = createSSEStream(source());
+    const reader = stream.getReader();
+    const decoder = new TextDecoder();
+
+    const chunks: string[] = [];
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(decoder.decode(value));
+    }
+
+    const output = chunks.join('');
+    expect(output).toContain('"type":"reasoning"');
+    expect(output).toContain('"content":"Let me think"');
+    // reasoning should also use 'chunk' event type (not 'error')
+    expect(output.split('event: chunk').length).toBeGreaterThanOrEqual(3); // reasoning + text + done
   });
 
   it('emits error event when source throws', async () => {

@@ -15,6 +15,9 @@ export const anthropicProvider: LLMProvider = {
       const systemMessage = request.messages.find(m => m.role === 'system');
       const nonSystemMessages = request.messages.filter(m => m.role !== 'system');
 
+      const thinkingEnabled = request.thinking === true;
+      const budgetTokens = Math.max(1024, (request.maxTokens ?? 4096) * 4);
+
       const stream = await client.messages.create(
         {
           model: request.model,
@@ -24,23 +27,31 @@ export const anthropicProvider: LLMProvider = {
             content: m.content,
           })),
           max_tokens: request.maxTokens ?? 4096,
-          temperature: request.temperature ?? 0.7,
+          ...(thinkingEnabled
+            ? { thinking: { type: 'enabled', budget_tokens: budgetTokens } }
+            : { temperature: request.temperature ?? 0.7 }),
           stream: true,
         },
         { signal }
       );
 
       for await (const event of stream) {
-        if (
-          event.type === 'content_block_delta' &&
-          event.delta.type === 'text_delta'
-        ) {
-          yield {
-            type: 'text',
-            content: event.delta.text,
-            model: request.model,
-            provider: 'anthropic',
-          };
+        if (event.type === 'content_block_delta') {
+          if (event.delta.type === 'thinking_delta') {
+            yield {
+              type: 'reasoning',
+              content: (event.delta as unknown as { thinking: string }).thinking,
+              model: request.model,
+              provider: 'anthropic',
+            };
+          } else if (event.delta.type === 'text_delta') {
+            yield {
+              type: 'text',
+              content: event.delta.text,
+              model: request.model,
+              provider: 'anthropic',
+            };
+          }
         }
       }
 

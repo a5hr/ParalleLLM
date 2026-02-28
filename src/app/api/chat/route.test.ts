@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { capMaxTokens, fixedTemperatureModels } from './route';
+import { capMaxTokens, fixedTemperatureModels, thinkingModels } from './route';
 
 describe('capMaxTokens', () => {
   it('caps to server maxOutput for known model (OpenRouter Llama)', () => {
@@ -49,5 +49,23 @@ describe('fixedTemperatureModels', () => {
     expect(fixedTemperatureModels.has('gpt-5.2')).toBe(false);
     expect(fixedTemperatureModels.has('gpt-4o-mini')).toBe(false);
     expect(fixedTemperatureModels.has('llama-3.3-70b-versatile')).toBe(false);
+  });
+});
+
+describe('thinkingModels', () => {
+  it('includes models with reasoning feature', () => {
+    expect(thinkingModels.has('gpt-5.2')).toBe(true);
+    expect(thinkingModels.has('deepseek/deepseek-r1-0528:free')).toBe(true);
+  });
+
+  it('includes models with extended-thinking feature', () => {
+    expect(thinkingModels.has('claude-opus-4-6')).toBe(true);
+    expect(thinkingModels.has('claude-sonnet-4-5-20250929')).toBe(true);
+    expect(thinkingModels.has('claude-haiku-4-5-20251001')).toBe(true);
+  });
+
+  it('does not include models without thinking features', () => {
+    expect(thinkingModels.has('gpt-4o-mini')).toBe(false);
+    expect(thinkingModels.has('llama-3.3-70b-versatile')).toBe(false);
   });
 });

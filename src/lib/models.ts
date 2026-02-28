@@ -51,9 +51,11 @@ export const providerNames: Record<string, string> = {
   ollama: 'Ollama',
   lmstudio: 'LM Studio',
   custom: 'Custom',
+  trial: 'Open Weights',
 };
 
 export const providerColors: Record<string, { accent: string; hex: string }> = {
+  trial: { accent: 'rose', hex: '#e11d48' }, // Noticeable color for trial
   openai: { accent: 'emerald', hex: '#10a37f' },
   anthropic: { accent: 'orange', hex: '#d97706' },
   google: { accent: 'blue', hex: '#4285f4' },

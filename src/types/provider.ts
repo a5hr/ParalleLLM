@@ -23,10 +23,11 @@ export interface ChatRequest {
   model: string;
   temperature?: number;
   maxTokens?: number;
+  thinking?: boolean;
 }
 
 export interface StreamChunk {
-  type: 'text' | 'error' | 'done';
+  type: 'text' | 'error' | 'done' | 'reasoning';
   content: string;
   model: string;
   provider: string;

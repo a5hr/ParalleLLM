@@ -24,7 +24,17 @@ export const openaiProvider: LLMProvider = {
       );
 
       for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content;
+        const delta = chunk.choices[0]?.delta;
+        const reasoning = (delta as Record<string, unknown>)?.reasoning_content as string | undefined;
+        if (reasoning) {
+          yield {
+            type: 'reasoning',
+            content: reasoning,
+            model: request.model,
+            provider: 'openai',
+          };
+        }
+        const content = delta?.content;
         if (content) {
           yield {
             type: 'text',

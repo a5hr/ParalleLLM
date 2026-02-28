@@ -39,7 +39,7 @@ const ja: Record<TranslationKey, string> = {
 
   // Prompt input
   'prompt.placeholderNoModel': '上のモデルを1つ以上選択してください...',
-  'prompt.placeholder': 'プロンプトを入力... (Enter で送信、Shift+Enter で改行)',
+  'prompt.placeholder': '質問や指示を入力... (Enter で送信、Shift+Enter で改行)',
   'prompt.stop': '停止',
   'prompt.send': '送信',
   'prompt.clear': 'クリア',
@@ -48,7 +48,7 @@ const ja: Record<TranslationKey, string> = {
 
   // System prompt
   'systemPrompt.label': 'システムプロンプト',
-  'systemPrompt.placeholder': 'システムプロンプトを入力（任意）...',
+  'systemPrompt.placeholder': 'モデルの振る舞いを指定（例: あなたは○○の専門家です / JSON形式で回答してください）',
 
   // API key dialog
   'apiKeys.title': 'API キー',
@@ -71,6 +71,8 @@ const ja: Record<TranslationKey, string> = {
   'response.streaming': 'ストリーミング中...',
   'response.waiting': 'レスポンスを待機中...',
   'response.tokens': '{count} トークン',
+  'response.thinking': '思考中...',
+  'response.thinkingChars': '思考過程 ({count}文字)',
 
   // Connection status
   'connection.connected': '接続済み',
@@ -96,6 +98,12 @@ const ja: Record<TranslationKey, string> = {
 
   // Language
   'lang.switch': '言語',
+
+  // Trial Models
+  'trial.privacyTitle': '',
+  'trial.privacyDesc': '入力されたプロンプトやチャット履歴はサーバーに保存されず、AIの学習にも利用されません。',
+  'trial.coldStartTitle': '初回起動について: ',
+  'trial.coldStartDesc': 'Open Weightsモデルは初回起動時にクラウドGPUを確保・ロードするため、最初の1回目のみ1〜3分ほど時間がかかります。2回目以降は即座に返答されます。',
 };
 
 export default ja;

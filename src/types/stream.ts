@@ -6,7 +6,7 @@ export interface SSEEvent {
 export interface SSEChunkData {
   model: string;
   provider: string;
-  type: 'text' | 'done';
+  type: 'text' | 'done' | 'reasoning';
   content: string;
   metadata?: {
     tokensUsed?: number;

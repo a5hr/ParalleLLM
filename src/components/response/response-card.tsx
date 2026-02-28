@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { providerColors, providerNames, providerTypeBadge } from '@/lib/models';
 import { useModelStore } from '@/store/model-store';
 import { ResponseContent } from './response-content';
+import { ThinkingBlock } from './thinking-block';
 import { ResponseMeta } from './response-meta';
 import { cn } from '@/lib/utils';
 import type { ModelResponse } from '@/types/chat';
@@ -96,10 +97,18 @@ export const ResponseCard = memo(function ResponseCard({ response }: ResponseCar
             <p className="text-sm">{response.error}</p>
           </div>
         ) : (
-          <ResponseContent
-            content={response.content}
-            isStreaming={isStreaming}
-          />
+          <>
+            {response.reasoning && (
+              <ThinkingBlock
+                reasoning={response.reasoning}
+                isStreaming={isStreaming}
+              />
+            )}
+            <ResponseContent
+              content={response.content}
+              isStreaming={isStreaming}
+            />
+          </>
         )}
       </CardContent>
 

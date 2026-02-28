@@ -41,12 +41,12 @@ export function createOpenAICompatibleProvider(config: OpenAICompatibleConfig): 
         for await (const chunk of stream) {
           const delta = chunk.choices[0]?.delta;
           const content = delta?.content;
-          // Some reasoning models (e.g. DeepSeek R1) emit thinking tokens
-          // in a separate field before the final answer
           const reasoning = (delta as Record<string, unknown>)?.reasoning_content as string | undefined;
-          const text = content || reasoning;
-          if (text) {
-            yield { type: 'text', content: text, model: request.model, provider: config.name };
+          if (reasoning) {
+            yield { type: 'reasoning', content: reasoning, model: request.model, provider: config.name };
+          }
+          if (content) {
+            yield { type: 'text', content, model: request.model, provider: config.name };
           }
         }
 

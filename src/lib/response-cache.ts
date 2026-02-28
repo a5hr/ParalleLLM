@@ -3,6 +3,7 @@ import type { ChatMessage } from '@/types/provider';
 
 interface CachedResponse {
   content: string;
+  reasoning?: string;
   provider: string;
   tokensUsed?: number;
   cachedAt: number;

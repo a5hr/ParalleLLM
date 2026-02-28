@@ -13,6 +13,7 @@ interface ChatState {
   startStream: (modelIds: string[]) => void;
   updateResponse: (modelId: string, update: Partial<ModelResponse>) => void;
   appendContent: (modelId: string, content: string) => void;
+  appendReasoning: (modelId: string, content: string) => void;
   completeResponse: (modelId: string, usage?: TokenUsage, latencyMs?: number) => void;
   setError: (modelId: string, error: string) => void;
   cancelStream: () => void;
@@ -37,6 +38,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         modelId: id,
         provider: '',
         content: '',
+        reasoning: '',
         status: 'streaming',
         startedAt: Date.now(),
       };
@@ -60,6 +62,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
         responses: {
           ...state.responses,
           [modelId]: { ...existing, content: existing.content + content },
+        },
+      };
+    }),
+
+  appendReasoning: (modelId, content) =>
+    set((state) => {
+      const existing = state.responses[modelId];
+      if (!existing) return state;
+      return {
+        responses: {
+          ...state.responses,
+          [modelId]: { ...existing, reasoning: (existing.reasoning ?? '') + content },
         },
       };
     }),

@@ -1,6 +1,6 @@
 export interface SSEMessage {
     event: string;
-    data: any;
+    data: unknown;
 }
 
 /**

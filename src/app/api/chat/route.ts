@@ -33,6 +33,19 @@ export function capMaxTokens(
   return Math.min(requestedMaxTokens, FALLBACK_MAX_OUTPUT); // Unknown cloud model
 }
 
+interface ChatMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+interface ModelConfig {
+  id: string;
+  temperature?: number;
+  maxTokens?: number;
+  provider?: string;
+  baseUrl?: string;
+}
+
 export function buildProviderRequests({
   models,
   messages,
@@ -42,17 +55,17 @@ export function buildProviderRequests({
   configMap,
 }: {
   models: string[];
-  messages: any[];
+  messages: ChatMessage[];
   temperature?: number;
   maxTokens?: number;
   apiKeys?: Record<string, string>;
-  configMap: Map<string, any>;
+  configMap: Map<string, ModelConfig>;
 }) {
   return models.map((model) => {
     // Resolve deprecated model aliases (e.g. deepseek-chat-v3-0324 → deepseek-r1-0528)
     const resolvedModel = resolveModelId(model);
     const perModel = configMap.get(model);
-    const requestedMaxTokens = perModel?.maxTokens ?? maxTokens;
+    const requestedMaxTokens = perModel?.maxTokens ?? maxTokens ?? FALLBACK_MAX_OUTPUT;
     const safeMaxTokens = capMaxTokens(requestedMaxTokens, resolvedModel, !!perModel?.baseUrl);
 
     const safeTemperature = fixedTemperatureModels.has(resolvedModel)

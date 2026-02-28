@@ -9,6 +9,7 @@ interface ModelConfig {
   providerType: 'cloud' | 'local';
   enabled: boolean;
   isFree: boolean;
+  contextWindow: number;
   maxOutput: number;
   pricing: { input: number; output: number } | null;
   baseUrl?: string;
@@ -50,6 +51,7 @@ const initialModels: ModelConfig[] = defaultModels.map((m) => ({
   providerType: m.providerType,
   enabled: true,
   isFree: m.isFree,
+  contextWindow: m.maxTokens,
   maxOutput: m.maxOutput,
   pricing: m.pricing,
   parameters: {
@@ -119,6 +121,7 @@ export const useModelStore = create<ModelState>()(
               providerType: 'local' as const,
               enabled: true,
               isFree: true,
+              contextWindow: 4096,
               maxOutput: 4096,
               pricing: null,
               baseUrl,
@@ -137,7 +140,7 @@ export const useModelStore = create<ModelState>()(
     }),
     {
       name: 'parallellm-models',
-      version: 6,
+      version: 7,
       partialize: (state) => ({
         models: state.models,
         selectedModelIds: state.selectedModelIds,
@@ -237,6 +240,7 @@ export function migrateModelState(persisted: unknown, version: number): Record<s
                   providerType: def.providerType,
                   enabled: true,
                   isFree: def.isFree,
+                  contextWindow: def.maxTokens,
                   maxOutput: def.maxOutput,
                   pricing: def.pricing,
                   parameters: { temperature: 0.7, maxTokens: def.maxOutput },
@@ -294,12 +298,27 @@ export function migrateModelState(persisted: unknown, version: number): Record<s
                   providerType: def.providerType,
                   enabled: true,
                   isFree: def.isFree,
+                  contextWindow: def.maxTokens,
                   maxOutput: def.maxOutput,
                   pricing: def.pricing,
                   parameters: { temperature: 0.7, maxTokens: def.maxOutput },
                 });
               }
             }
+          }
+        }
+
+        if (version < 7) {
+          // Add contextWindow property to all models
+          if (models) {
+            models = models.map((m) => {
+              const def = defaultMap.get(m.id);
+              const existing = (m as unknown as Record<string, unknown>).contextWindow as number | undefined;
+              return {
+                ...m,
+                contextWindow: existing ?? def?.maxTokens ?? 4096,
+              };
+            });
           }
         }
 

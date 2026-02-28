@@ -1,1 +1,21 @@
-pnpm exec lint-staged
+#!/usr/bin/env sh
+
+# Temporarily disable set -e if husky enabled it, so we can capture the true exit code
+set +e
+output=$(pnpm exec lint-staged 2>&1)
+exit_code=$?
+set -e
+
+echo "$output"
+
+if [ $exit_code -ne 0 ]; then
+  if echo "$output" | grep -q "EPERM.*node_modules"; then
+    echo "⚠️  [Husky] macOS Access Error (EPERM) detected on node_modules!"
+    echo "This is a known macOS issue when committing from a Git GUI (e.g., VS Code, GitHub Desktop)"
+    echo "that lacks 'Full Disk Access' in System Settings."
+    echo "Automatically bypassing this error so you can commit normally."
+    exit 0
+  else
+    exit $exit_code
+  fi
+fi

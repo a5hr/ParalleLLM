@@ -1,8 +1,6 @@
 'use client';
 
 import { useChatStore } from '@/store/chat-store';
-import { useModelStore } from '@/store/model-store';
-import { useApiKeyStore } from '@/store/api-key-store';
 import { ResponseCard } from './response-card';
 
 export function ResponseGrid() {

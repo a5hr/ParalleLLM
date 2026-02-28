@@ -99,6 +99,17 @@ const ja: Record<TranslationKey, string> = {
   // Language
   'lang.switch': '言語',
 
+  // Model list dialog
+  'modelList.title': '登録モデル一覧',
+  'modelList.description': '利用可能な全モデルとその仕様',
+  'modelList.modelCount': 'モデル',
+  'modelList.colName': 'モデル名',
+  'modelList.colId': 'ID',
+  'modelList.colContext': 'コンテキスト',
+  'modelList.colMaxOutput': '最大出力',
+  'modelList.colPricing': '料金 (入力/出力)',
+  'modelList.viewAll': '全モデルを表示',
+
   // Trial Models
   'trial.privacyTitle': '',
   'trial.privacyDesc': '入力されたプロンプトやチャット履歴はサーバーに保存されず、AIの学習にも利用されません。',

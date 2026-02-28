@@ -6,14 +6,21 @@ import {
   providerNames,
   formatTokens,
   formatPrice,
+  defaultModels,
 } from '@/lib/models';
 import { ModelConfigDialog } from './model-config-dialog';
+import { ModelListDialog } from './model-list-dialog';
 import { LocalModelsSection } from './local-models-section';
 import { PrivacyNotice } from '@/components/common/privacy-notice';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { Settings2, Check, Zap, DollarSign, MessageSquare, Info } from 'lucide-react';
+import { Settings2, Check, Zap, DollarSign, MessageSquare, Info, List } from 'lucide-react';
 import { useT } from '@/store/locale-store';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
+
+// Pre-compute lookup map for default model context windows
+const defaultContextWindows = new Map(defaultModels.map((m) => [m.id, m.maxTokens]));
 
 export function ModelSelector() {
   const models = useModelStore((s) => s.models);
@@ -22,6 +29,11 @@ export function ModelSelector() {
   const { t } = useT();
 
   const [configModelId, setConfigModelId] = useState<string | null>(null);
+  const [showModelList, setShowModelList] = useState(false);
+
+  // Helper to get context window with fallback
+  const getContextWindow = (m: typeof models[number]) =>
+    m.contextWindow ?? defaultContextWindows.get(m.id) ?? m.maxOutput;
 
   // Group models by provider
   const groupedByProvider = new Map<string, typeof models>();
@@ -44,7 +56,18 @@ export function ModelSelector() {
   return (
     <div className="space-y-4 rounded-lg border bg-card p-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">{t('models.title')}</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold">{t('models.title')}</h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+            onClick={() => setShowModelList(true)}
+          >
+            <List className="size-3 mr-1" />
+            {t('modelList.viewAll')}
+          </Button>
+        </div>
         <span className={cn('text-xs', selectedModelIds.length >= MAX_SELECTED_MODELS ? 'text-orange-500 font-medium' : 'text-muted-foreground')}>
           {t('models.selected', { count: selectedModelIds.length })} / {MAX_SELECTED_MODELS}
         </span>
@@ -126,27 +149,44 @@ export function ModelSelector() {
                               </div>
                             </div>
                           </div>
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-                            <span className="inline-flex items-center gap-1" title={t('models.contextWindow')}>
-                              <MessageSquare className="size-3" />
-                              {formatTokens(m.parameters.maxTokens)}
-                            </span>
-                            <span className="inline-flex items-center gap-1" title={t('models.maxOutput')}>
-                              <Zap className="size-3" />
-                              {formatTokens(m.maxOutput)}
-                            </span>
-                            {m.pricing ? (
-                              <span className="inline-flex items-center gap-1" title={t('models.pricingTitle')}>
-                                <DollarSign className="size-3" />
-                                <span>{formatPrice(m.pricing.input)}/{formatPrice(m.pricing.output)}</span>
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 font-semibold text-green-600 dark:text-green-400">
-                                <DollarSign className="size-3" />
-                                {t('models.freeLower')}
-                              </span>
-                            )}
-                          </div>
+                          <TooltipProvider>
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex items-center gap-1 cursor-help">
+                                    <MessageSquare className="size-3" />
+                                    {formatTokens(getContextWindow(m))}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>{t('models.contextWindow')}</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex items-center gap-1 cursor-help">
+                                    <Zap className="size-3" />
+                                    {formatTokens(m.maxOutput)}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>{t('models.maxOutput')}</TooltipContent>
+                              </Tooltip>
+                              {m.pricing ? (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="inline-flex items-center gap-1 cursor-help">
+                                      <DollarSign className="size-3" />
+                                      <span>{formatPrice(m.pricing.input)}/{formatPrice(m.pricing.output)}</span>
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>{t('models.pricingTitle')}</TooltipContent>
+                                </Tooltip>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 font-semibold text-green-600 dark:text-green-400">
+                                  <DollarSign className="size-3" />
+                                  {t('models.freeLower')}
+                                </span>
+                              )}
+                            </div>
+                          </TooltipProvider>
                         </button>
                       );
                     })}
@@ -238,6 +278,11 @@ export function ModelSelector() {
         onOpenChange={(open) => {
           if (!open) setConfigModelId(null);
         }}
+      />
+
+      <ModelListDialog
+        open={showModelList}
+        onOpenChange={setShowModelList}
       />
     </div>
   );

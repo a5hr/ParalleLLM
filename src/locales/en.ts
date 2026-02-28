@@ -97,6 +97,17 @@ const en = {
   // Language
   'lang.switch': 'Language',
 
+  // Model list dialog
+  'modelList.title': 'Registered Models',
+  'modelList.description': 'All available models with their specifications',
+  'modelList.modelCount': 'models',
+  'modelList.colName': 'Model',
+  'modelList.colId': 'ID',
+  'modelList.colContext': 'Context',
+  'modelList.colMaxOutput': 'Max Output',
+  'modelList.colPricing': 'Pricing (In/Out)',
+  'modelList.viewAll': 'View all models',
+
   // Trial Models
   'trial.privacyTitle': '',
   'trial.privacyDesc': 'Your prompts and chat history are never saved to our servers or used for AI training.',

@@ -5,6 +5,7 @@ import { useChatStore } from '@/store/chat-store';
 import { useModelStore } from '@/store/model-store';
 import { useApiKeyStore } from '@/store/api-key-store';
 import type { SSEChunkData, SSEErrorData } from '@/types/stream';
+import { parseSSEStream } from '@/lib/streaming/sse-client';
 import { trackChatStart, trackChatComplete, trackChatError } from '@/lib/analytics';
 
 export function useStreamChat() {
@@ -81,68 +82,33 @@ export function useStreamChat() {
           return;
         }
 
-        const reader = response.body!.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const parts = buffer.split('\n\n');
-          buffer = parts.pop() || '';
-
-          for (const part of parts) {
-            if (!part.trim()) continue;
-
-            const lines = part.split('\n');
-            let eventType = '';
-            let dataStr = '';
-
-            for (const line of lines) {
-              if (line.startsWith('event: ')) {
-                eventType = line.slice(7).trim();
-              } else if (line.startsWith('data: ')) {
-                dataStr = line.slice(6);
-              }
+        for await (const { event: eventType, data } of parseSSEStream(response)) {
+          if (eventType === 'chunk') {
+            const chunk = data as SSEChunkData;
+            if (chunk.type === 'text') {
+              updateResponse(chunk.model, { provider: chunk.provider });
+              appendContent(chunk.model, chunk.content);
+            } else if (chunk.type === 'reasoning') {
+              updateResponse(chunk.model, { provider: chunk.provider });
+              appendReasoning(chunk.model, chunk.content);
+            } else if (chunk.type === 'done') {
+              const tokens = chunk.metadata?.tokensUsed;
+              const latency = chunk.metadata?.latencyMs;
+              completeResponse(
+                chunk.model,
+                tokens
+                  ? { promptTokens: 0, completionTokens: tokens, totalTokens: tokens }
+                  : undefined,
+                latency
+              );
+              trackChatComplete(chunk.model, chunk.provider ?? 'unknown', latency, tokens);
             }
-
-            if (!dataStr) continue;
-
-            try {
-              const data = JSON.parse(dataStr);
-
-              if (eventType === 'chunk') {
-                const chunk = data as SSEChunkData;
-                if (chunk.type === 'text') {
-                  updateResponse(chunk.model, { provider: chunk.provider });
-                  appendContent(chunk.model, chunk.content);
-                } else if (chunk.type === 'reasoning') {
-                  updateResponse(chunk.model, { provider: chunk.provider });
-                  appendReasoning(chunk.model, chunk.content);
-                } else if (chunk.type === 'done') {
-                  const tokens = chunk.metadata?.tokensUsed;
-                  const latency = chunk.metadata?.latencyMs;
-                  completeResponse(
-                    chunk.model,
-                    tokens
-                      ? { promptTokens: 0, completionTokens: tokens, totalTokens: tokens }
-                      : undefined,
-                    latency
-                  );
-                  trackChatComplete(chunk.model, chunk.provider ?? 'unknown', latency, tokens);
-                }
-              } else if (eventType === 'error') {
-                const errData = data as SSEErrorData;
-                setError(errData.model, errData.content);
-                trackChatError(errData.model, errData.provider ?? 'unknown');
-              } else if (eventType === 'done') {
-                // All streams done, nothing to do - individual completes handle state
-              }
-            } catch {
-              // Skip malformed JSON
-            }
+          } else if (eventType === 'error') {
+            const errData = data as SSEErrorData;
+            setError(errData.model, errData.content);
+            trackChatError(errData.model, errData.provider ?? 'unknown');
+          } else if (eventType === 'done') {
+            // All streams done, nothing to do - individual completes handle state
           }
         }
       } catch (err) {

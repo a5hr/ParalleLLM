@@ -11,6 +11,23 @@ import { useStreamChat } from '@/hooks/use-stream-chat';
 import { SystemPromptEditor } from './system-prompt-editor';
 import { useT } from '@/store/locale-store';
 
+function validateApiKeys(
+  selectedModelIds: string[],
+  models: { id: string; providerType: string; provider: string }[],
+  keys: Record<string, string>
+): boolean {
+  for (const id of selectedModelIds) {
+    const model = models.find((m) => m.id === id);
+    if (model && model.providerType === 'cloud' && model.provider !== 'trial') {
+      const hasKey = !!keys[model.provider as keyof typeof keys];
+      if (!hasKey) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 export function PromptInput() {
   const prompt = useChatStore((s) => s.prompt);
   const setPrompt = useChatStore((s) => s.setPrompt);
@@ -28,15 +45,9 @@ export function PromptInput() {
   const handleSend = useCallback(() => {
     if (!canSend) return;
 
-    for (const id of selectedModelIds) {
-      const model = models.find(m => m.id === id);
-      if (model && model.providerType === 'cloud' && model.provider !== 'trial') {
-        const hasKey = !!keys[model.provider as keyof typeof keys];
-        if (!hasKey) {
-          alert(t('guide.noKeys'));
-          return; // Prevent sending
-        }
-      }
+    if (!validateApiKeys(selectedModelIds, models, keys)) {
+      alert(t('guide.noKeys'));
+      return; // Prevent sending
     }
 
     startChat(prompt, systemPrompt, selectedModelIds);

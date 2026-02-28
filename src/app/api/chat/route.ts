@@ -33,6 +33,50 @@ export function capMaxTokens(
   return Math.min(requestedMaxTokens, FALLBACK_MAX_OUTPUT); // Unknown cloud model
 }
 
+export function buildProviderRequests({
+  models,
+  messages,
+  temperature,
+  maxTokens,
+  apiKeys,
+  configMap,
+}: {
+  models: string[];
+  messages: any[];
+  temperature?: number;
+  maxTokens?: number;
+  apiKeys?: Record<string, string>;
+  configMap: Map<string, any>;
+}) {
+  return models.map((model) => {
+    // Resolve deprecated model aliases (e.g. deepseek-chat-v3-0324 → deepseek-r1-0528)
+    const resolvedModel = resolveModelId(model);
+    const perModel = configMap.get(model);
+    const requestedMaxTokens = perModel?.maxTokens ?? maxTokens;
+    const safeMaxTokens = capMaxTokens(requestedMaxTokens, resolvedModel, !!perModel?.baseUrl);
+
+    const safeTemperature = fixedTemperatureModels.has(resolvedModel)
+      ? undefined
+      : perModel?.temperature ?? temperature;
+
+    const isThinkingModel = thinkingModels.has(resolvedModel);
+
+    return {
+      model: resolvedModel,
+      request: {
+        messages,
+        model: resolvedModel,
+        temperature: safeTemperature,
+        maxTokens: safeMaxTokens,
+        ...(isThinkingModel ? { thinking: true } : {}),
+      },
+      userApiKeys: apiKeys,
+      providerHint: perModel?.provider,
+      baseUrl: perModel?.baseUrl,
+    };
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const clientId = request.headers.get('x-forwarded-for') || 'anonymous';
@@ -73,32 +117,13 @@ export async function POST(request: NextRequest) {
 
     const configMap = new Map(modelConfigs?.map(c => [c.id, c]));
 
-    const requests = models.map(model => {
-      // Resolve deprecated model aliases (e.g. deepseek-chat-v3-0324 → deepseek-r1-0528)
-      const resolvedModel = resolveModelId(model);
-      const perModel = configMap.get(model);
-      const requestedMaxTokens = perModel?.maxTokens ?? maxTokens;
-      const safeMaxTokens = capMaxTokens(requestedMaxTokens, resolvedModel, !!perModel?.baseUrl);
-
-      const safeTemperature = fixedTemperatureModels.has(resolvedModel)
-        ? undefined
-        : (perModel?.temperature ?? temperature);
-
-      const isThinkingModel = thinkingModels.has(resolvedModel);
-
-      return {
-        model: resolvedModel,
-        request: {
-          messages,
-          model: resolvedModel,
-          temperature: safeTemperature,
-          maxTokens: safeMaxTokens,
-          ...(isThinkingModel ? { thinking: true } : {}),
-        },
-        userApiKeys: apiKeys,
-        providerHint: perModel?.provider,
-        baseUrl: perModel?.baseUrl,
-      };
+    const requests = buildProviderRequests({
+      models,
+      messages,
+      temperature,
+      maxTokens,
+      apiKeys,
+      configMap,
     });
 
     const parallelStream = executeParallel(requests);

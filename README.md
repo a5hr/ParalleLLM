@@ -137,6 +137,16 @@ Provider APIs              data/model-overrides.json
                   (defaultModels) (modelProviderMap)  (listModels)
 ```
 
+### API 取得元エンドポイント
+
+各プロバイダーのモデル一覧は以下の公式エンドポイントから自動取得しています：
+
+- **OpenAI**: `GET https://api.openai.com/v1/models`
+- **Anthropic**: `GET https://api.anthropic.com/v1/models`
+- **Google**: `GET https://generativelanguage.googleapis.com/v1beta/models`
+- **Groq**: `GET https://api.groq.com/openai/v1/models`
+- **OpenRouter**: `GET https://openrouter.ai/api/v1/models`
+
 ### CI での自動更新
 
 GitHub Actions が毎日（JST 08:00）`update-models` を実行し、差分があれば PR を自動作成します。
@@ -204,38 +214,47 @@ src/
 │   │   └── providers/      # ローカル LLM 検出・テスト
 │   └── page.tsx            # メインページ
 ├── components/
-│   ├── layout/             # Header
+│   ├── common/             # 共通コンポーネント (Tooltip等)
+│   ├── layout/             # Header / Layout
 │   ├── model-selector/     # モデル選択 UI
-│   ├── prompt/             # プロンプト入力
-│   ├── response/           # レスポンス表示カード
-│   ├── settings/           # API キー設定ダイアログ
-│   └── ui/                 # shadcn/ui コンポーネント
+│   ├── prompt/             # プロンプト入力エリア
+│   ├── provider-setup/     # プロバイダー設定 UI
+│   ├── response/           # レスポンス表示 / 比較カード
+│   ├── settings/           # アプリケーション設定 / APIキーダイアログ
+│   └── ui/                 # shadcn/ui コンポーネント群
 ├── hooks/
-│   └── use-stream-chat.ts  # SSE ストリーミングフック
+│   ├── use-auto-scroll.ts  # 自動スクロール制御
+│   └── use-stream-chat.ts  # SSE ストリーミング通信フック
 ├── lib/
-│   ├── providers/          # LLM プロバイダーアダプター
+│   ├── providers/          # LLM プロバイダーごとの実装 (OpenAI, Anthropic等)
 │   ├── streaming/          # SSE エンコーダー・並列実行エンジン
-│   ├── api-keys.ts         # API キー解決
+│   ├── analytics.ts        # Google Analytics (gtag)
+│   ├── api-keys.ts         # API キーの解決ロジック
+│   ├── errors.ts           # カスタムエラー定義
 │   ├── models.ts           # モデル定義 (data/models.json から読込)
-│   ├── rate-limiter.ts     # レートリミッター
+│   ├── rate-limiter.ts     # レートリミット制御
+│   ├── response-cache.ts   # レスポンスの復元・キャッシュ用
 │   ├── url-validation.ts   # SSRF 対策 URL バリデーション
-│   └── validation.ts       # Zod リクエストバリデーション
+│   ├── utils.ts            # 汎用ユーティリティ
+│   └── validation.ts       # Zod リクエストバリデーションスキーマ
 ├── store/
-│   ├── api-key-store.ts    # API キー (Zustand + localStorage)
-│   ├── chat-store.ts       # チャット状態
-│   ├── model-store.ts      # モデル設定
-│   └── ui-store.ts         # UI 状態
-└── types/                  # TypeScript 型定義
+│   ├── api-key-store.ts    # API キー (localStorage)
+│   ├── chat-store.ts       # チャットの進行状態 (メモリ)
+│   ├── locale-store.ts     # 言語設定 (localStorage)
+│   ├── model-store.ts      # モデル構成 (localStorage)
+│   └── ui-store.ts         # UI 表示状態 (メモリ / localStorage)
+└── types/                  # TypeScript 基本型定義
 
 data/
 ├── models.json             # モデル定義 (単一ソース・自動生成)
-└── model-overrides.json    # 手動オーバーライド (料金・名前等)
+└── model-overrides.json    # API で取得できない情報の補完および静的モデル
 
 scripts/
-└── update-models.ts        # モデル定義更新バッチ
+└── update-models.ts        # モデル定義更新スクリプト
 ```
 
 ## Security
+
 
 - **SSRF 対策**: ローカル LLM の `baseUrl` はサーバー側でバリデーション。localhost / プライベート IP / `.local` ドメインのみ許可
 - **API キー**: ブラウザの localStorage に保存。サーバーへはリクエスト時のみ送信、ログ記録なし

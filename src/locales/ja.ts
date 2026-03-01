@@ -95,6 +95,9 @@ const ja: Record<TranslationKey, string> = {
   'quickstart.step2': '比較したいモデルを選択',
   'quickstart.step3': 'プロンプトを入力して送信',
   'quickstart.hint': 'Groq・OpenRouter は無料（カード不要）。Ollama / LM Studio はローカルモデルを自動検出。キーはすべてブラウザ内に保存されます。',
+  'quickstart.hintFree': '無料 — カード登録不要',
+  'quickstart.hintLocal': 'ローカルモデルを自動検出',
+  'quickstart.hintKeys': 'キーはすべてブラウザ内に保存',
 
   // Language
   'lang.switch': '言語',

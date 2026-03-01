@@ -93,6 +93,9 @@ const en = {
   'quickstart.step2': 'Select models to compare',
   'quickstart.step3': 'Enter a prompt and send',
   'quickstart.hint': 'Groq & OpenRouter are free (no credit card). Local models (Ollama, LM Studio) are auto-detected. All keys stay in your browser.',
+  'quickstart.hintFree': 'Free — no credit card needed',
+  'quickstart.hintLocal': 'Auto-detected when running locally',
+  'quickstart.hintKeys': 'All keys stay in your browser',
 
   // Language
   'lang.switch': 'Language',

@@ -64,7 +64,6 @@
     "isFree": false,
     "maxTokens": 1047576,
     "maxOutput": 32768,
-    "supportsTemperature": false,
     "pricing": {
       "input": 0.25,
       "output": 2
@@ -261,11 +260,24 @@
   },
   {
     "id": "meta-llama/llama-3.3-70b-instruct:free",
-    "name": "Llama 3.3 70B",
+    "name": "Meta: Llama 3.3 70B Instruct (free)",
     "provider": "openrouter",
     "providerType": "cloud",
     "isFree": true,
     "maxTokens": 128000,
+    "maxOutput": 128000,
+    "pricing": null,
+    "supportedFeatures": [
+      "streaming"
+    ]
+  },
+  {
+    "id": "deepseek/deepseek-chat-v3-0324:free",
+    "name": "deepseek/deepseek-chat-v3-0324:free",
+    "provider": "openrouter",
+    "providerType": "cloud",
+    "isFree": true,
+    "maxTokens": 131072,
     "maxOutput": 32768,
     "pricing": null,
     "supportedFeatures": [
@@ -273,12 +285,12 @@
     ]
   },
   {
-    "id": "deepseek/deepseek-r1-0528:free",
-    "name": "DeepSeek R1",
+    "id": "deepseek/deepseek-r1-zero:free",
+    "name": "deepseek/deepseek-r1-zero:free",
     "provider": "openrouter",
     "providerType": "cloud",
     "isFree": true,
-    "maxTokens": 163840,
+    "maxTokens": 131072,
     "maxOutput": 32768,
     "pricing": null,
     "supportedFeatures": [
@@ -288,11 +300,11 @@
   },
   {
     "id": "mistralai/mistral-small-3.1-24b-instruct:free",
-    "name": "Mistral Small 3.1 24B",
+    "name": "Mistral: Mistral Small 3.1 24B (free)",
     "provider": "openrouter",
     "providerType": "cloud",
     "isFree": true,
-    "maxTokens": 96000,
+    "maxTokens": 128000,
     "maxOutput": 32768,
     "pricing": null,
     "supportedFeatures": [

@@ -25,6 +25,7 @@
 *.pem
 .claude
 __pycache__
+data/update-report.md
 
 # debug
 npm-debug.log*

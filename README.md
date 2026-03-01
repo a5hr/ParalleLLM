@@ -13,7 +13,7 @@
 - **モデル個別設定**: temperature、max tokens をモデルごとに調整可能
 - **API キー管理**: ブラウザ内に保存。サーバー側の環境変数でも設定可能
 - **ダークモード**: ライト / ダーク / システム連動
-- **モデル定義の自動更新**: プロバイダー API から週次で自動取得 → PR 作成
+- **モデル定義の自動更新**: プロバイダー API から毎日自動取得 → PR 作成
 
 ## Tech Stack
 
@@ -123,10 +123,10 @@ pnpm run update-models --verbose
 ### データフロー
 
 ```
-Provider APIs              data/model-overrides.json (手動メンテ)
-(OpenAI, Google,           ├── include: プロバイダーごとの採用モデル一覧
- Groq, OpenRouter)         ├── overrides: 料金・名前等の上書き
-       │                   └── manual: API 非対応モデル (Anthropic)
+Provider APIs              data/model-overrides.json
+(OpenAI, Anthropic,        ├── include: プロバイダーごとの採用モデル一覧
+ Google, Groq,             └── overrides: API で取得できない料金・機能等の補完
+ OpenRouter)
        │                            │
        ▼                            ▼
   scripts/update-models.ts ─────→ data/models.json
@@ -139,7 +139,12 @@ Provider APIs              data/model-overrides.json (手動メンテ)
 
 ### CI での自動更新
 
-GitHub Actions が毎週月曜に `update-models` を実行し、差分があれば PR を自動作成します。
+GitHub Actions が毎日（JST 08:00）`update-models` を実行し、差分があれば PR を自動作成します。
+PR には以下のレビューレポートが自動的に含まれます:
+
+- **新モデル検出**: API に存在するが `include` に未登録のモデル
+- **廃止候補**: `include` にあるが API で見つからないモデル
+- **料金・トークン上限の変更**: 前回との差分
 
 ## Deployment
 

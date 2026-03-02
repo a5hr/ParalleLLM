@@ -14,6 +14,7 @@ interface ModelEntry {
   maxOutput: number;
   pricing: { input: number; output: number } | null;
   supportedFeatures: string[];
+  supportsTemperature?: boolean;
 }
 
 interface ProviderDefaults {
@@ -23,6 +24,7 @@ interface ProviderDefaults {
   maxTokens?: number;
   maxOutput?: number;
   supportedFeatures: string[];
+  supportsTemperature?: boolean;
 }
 
 interface OverridesConfig {
@@ -212,6 +214,7 @@ function buildModel(
   defaults: ProviderDefaults,
   apiData: ApiModelData | undefined,
   override: Partial<ModelEntry> | undefined,
+  fallback?: ModelEntry
 ): ModelEntry {
   return {
     id,
@@ -232,6 +235,7 @@ function buildModel(
             ? defaults.pricing
             : null,
     supportedFeatures: override?.supportedFeatures ?? defaults.supportedFeatures,
+    supportsTemperature: override?.supportsTemperature ?? defaults.supportsTemperature ?? fallback?.supportsTemperature,
   };
 }
 
@@ -401,7 +405,7 @@ async function main() {
           }
           : undefined);
 
-      const model = buildModel(modelId, provider, defaults, effectiveApiData, override);
+      const model = buildModel(modelId, provider, defaults, effectiveApiData, override, fallback);
 
       // Track pricing/limit changes
       if (fallback) {

@@ -71,7 +71,8 @@
     "supportedFeatures": [
       "streaming",
       "function-calling"
-    ]
+    ],
+    "supportsTemperature": false
   },
   {
     "id": "gpt-4o-mini",

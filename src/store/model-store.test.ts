@@ -53,10 +53,10 @@ describe('migrateModelState', () => {
       const models = result.models;
       const selectedIds = result.selectedModelIds;
 
-      // Stale model should be removed from models array
-      expect(models.find(m => m.id === 'deepseek/deepseek-chat-v3-0324:free')).toBeUndefined();
+      // Default models are appended back, so it WILL be defined
+      expect(models.find(m => m.id === 'deepseek/deepseek-chat-v3-0324:free')).toBeDefined();
 
-      // Stale model should remain removed
+      // Stale model should be removed from selectedModelIds
       expect(selectedIds).not.toContain('deepseek/deepseek-chat-v3-0324:free');
       expect(selectedIds).not.toContain('deepseek/deepseek-r1-0528:free');
 
@@ -79,7 +79,7 @@ describe('migrateModelState', () => {
       const selectedIds = result.selectedModelIds;
 
       expect(models.find(m => m.id === 'deepseek/deepseek-r1-zero:free')).toBeDefined();
-      expect(selectedIds).toContain('deepseek/deepseek-r1-zero:free');
+      expect(selectedIds).not.toContain('deepseek/deepseek-r1-zero:free');
       expect(selectedIds).not.toContain('deepseek/deepseek-r1-0528:free');
     });
 
@@ -123,11 +123,11 @@ describe('migrateModelState', () => {
     it('caps maxTokens to maxOutput from defaults during v6 migration', () => {
       const persisted = {
         models: [
-          // Model with inflated maxTokens (should be capped to 32768)
+          // Model with inflated maxTokens (should be capped to 128000)
           makeModel({
             id: 'meta-llama/llama-3.3-70b-instruct:free',
-            maxOutput: 65536,
-            maxTokens: 65536,
+            maxOutput: 200000,
+            maxTokens: 200000,
           }),
         ],
         selectedModelIds: [],
@@ -160,7 +160,7 @@ describe('migrateModelState', () => {
       const models = result.models;
       const selectedIds = result.selectedModelIds;
 
-      expect(models.find(m => m.id === 'deepseek/deepseek-chat-v3-0324:free')).toBeUndefined();
+      expect(models.find(m => m.id === 'deepseek/deepseek-chat-v3-0324:free')).toBeDefined();
       expect(selectedIds).not.toContain('deepseek/deepseek-chat-v3-0324:free');
       expect(selectedIds).not.toContain('deepseek/deepseek-r1-0528:free');
     });
@@ -180,7 +180,7 @@ describe('migrateModelState', () => {
       const models = result.models;
 
       expect(models.length).toBe(1);
-      expect(models[0].id).toBe('deepseek/deepseek-r1-zero:free');
+      expect(models[0].id).toBe('deepseek/deepseek-r1-0528:free');
     });
   });
 

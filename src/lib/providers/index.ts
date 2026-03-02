@@ -41,8 +41,6 @@ const modelProviderMap: Record<string, string> = Object.fromEntries(
 
 /** Map discontinued model IDs to their replacement */
 const modelAliases: Record<string, string> = {
-  'deepseek/deepseek-chat-v3-0324:free': 'deepseek/deepseek-r1-0528:free',
-  'deepseek/deepseek-r1-zero:free': 'deepseek/deepseek-r1-0528:free',
 };
 
 /** Resolve model alias — returns the canonical model ID */

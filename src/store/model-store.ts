@@ -250,7 +250,6 @@ export function migrateModelState(persisted: unknown, version: number): Record<s
       'deepseek/deepseek-chat-v3-0324:free',
       'deepseek/deepseek-r1-zero:free',
     ]);
-    const replacementId = 'deepseek/deepseek-r1-0528:free';
 
     let selectedIds = state.selectedModelIds as string[] | undefined;
     if (selectedIds) {

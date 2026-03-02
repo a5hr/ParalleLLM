@@ -153,174 +153,160 @@ export const useModelStore = create<ModelState>()(
 
 /** Exported for testing — zustand persist calls this on hydration */
 export function migrateModelState(persisted: unknown, version: number): Record<string, unknown> {
-        const state = persisted as Record<string, unknown>;
-        const defaultMap = new Map(defaultModels.map((m) => [m.id, m]));
-        let models = state.models as ModelConfig[] | undefined;
+  const state = persisted as Record<string, unknown>;
+  const defaultMap = new Map(defaultModels.map((m) => [m.id, m]));
+  let models = state.models as ModelConfig[] | undefined;
 
-        if (version < 2 && models) {
-          // Backfill maxOutput and pricing from defaultModels
-          models = models.map((m) => {
-            const def = defaultMap.get(m.id);
-            return {
-              ...m,
-              maxOutput: m.maxOutput ?? def?.maxOutput ?? 4096,
-              pricing: m.pricing !== undefined ? m.pricing : (def?.pricing ?? null),
-            };
+  if (version < 2 && models) {
+    // Backfill maxOutput and pricing from defaultModels
+    models = models.map((m) => {
+      const def = defaultMap.get(m.id);
+      return {
+        ...m,
+        maxOutput: m.maxOutput ?? def?.maxOutput ?? 4096,
+        pricing: m.pricing !== undefined ? m.pricing : (def?.pricing ?? null),
+      };
+    });
+  }
+
+  if (version < 3 && models) {
+    // Migrate providerType: 'free' -> 'cloud'
+    models = models.map((m) => ({
+      ...m,
+      providerType: (m.providerType === ('free' as string) ? 'cloud' : m.providerType) as ModelConfig['providerType'],
+    }));
+  }
+
+  if (version < 4 && models) {
+    // Cap parameters.maxTokens to maxOutput (was incorrectly using context window)
+    models = models.map((m) => {
+      const def = defaultMap.get(m.id);
+      const maxOutput = m.maxOutput ?? def?.maxOutput ?? 4096;
+      return {
+        ...m,
+        parameters: {
+          ...m.parameters,
+          maxTokens: Math.min(m.parameters.maxTokens, maxOutput),
+        },
+      };
+    });
+  }
+
+  if (version < 5) {
+    // Replace removed OpenRouter models and fix maxOutput values
+    const modelReplacements: Record<string, string> = {
+      'deepseek/deepseek-chat-v3-0324:free': 'deepseek/deepseek-r1-0528:free',
+      'deepseek/deepseek-r1-zero:free': 'deepseek/deepseek-r1-0528:free',
+    };
+
+    let selectedIds = state.selectedModelIds as string[] | undefined;
+    if (selectedIds) {
+      selectedIds = selectedIds.filter((id) => !modelReplacements[id]);
+      state.selectedModelIds = selectedIds;
+    }
+
+    if (models) {
+      // Remove old models that no longer exist, add replacements from defaults
+      const removedIds = new Set(Object.keys(modelReplacements));
+      models = models.filter((m) => !removedIds.has(m.id));
+      // Sync maxOutput from defaults for all models
+      models = models.map((m) => {
+        const def = defaultMap.get(m.id);
+        if (!def) return m;
+        return {
+          ...m,
+          maxOutput: def.maxOutput,
+          parameters: {
+            ...m.parameters,
+            maxTokens: Math.min(m.parameters.maxTokens, def.maxOutput),
+          },
+        };
+      });
+      // Add new default models not yet in the list
+      const existingIds = new Set(models.map((m) => m.id));
+      for (const def of defaultModels) {
+        if (!existingIds.has(def.id)) {
+          models.push({
+            id: def.id,
+            name: def.name,
+            provider: def.provider,
+            providerType: def.providerType,
+            enabled: true,
+            isFree: def.isFree,
+            contextWindow: def.maxTokens,
+            maxOutput: def.maxOutput,
+            pricing: def.pricing,
+            parameters: { temperature: 0.7, maxTokens: def.maxOutput },
           });
         }
+      }
+    }
+  }
 
-        if (version < 3 && models) {
-          // Migrate providerType: 'free' -> 'cloud'
-          models = models.map((m) => ({
-            ...m,
-            providerType: (m.providerType === ('free' as string) ? 'cloud' : m.providerType) as ModelConfig['providerType'],
-          }));
-        }
+  if (version < 6) {
+    // Re-run model cleanup for users who were already at v5 before
+    // deepseek-chat-v3-0324:free and deepseek-r1-zero:free were removed
+    const staleModelIds = new Set([
+      'deepseek/deepseek-chat-v3-0324:free',
+      'deepseek/deepseek-r1-zero:free',
+    ]);
+    const replacementId = 'deepseek/deepseek-r1-0528:free';
 
-        if (version < 4 && models) {
-          // Cap parameters.maxTokens to maxOutput (was incorrectly using context window)
-          models = models.map((m) => {
-            const def = defaultMap.get(m.id);
-            const maxOutput = m.maxOutput ?? def?.maxOutput ?? 4096;
-            return {
-              ...m,
-              parameters: {
-                ...m.parameters,
-                maxTokens: Math.min(m.parameters.maxTokens, maxOutput),
-              },
-            };
+    let selectedIds = state.selectedModelIds as string[] | undefined;
+    if (selectedIds) {
+      selectedIds = selectedIds.filter((id) => !staleModelIds.has(id));
+      state.selectedModelIds = selectedIds;
+    }
+
+    if (models) {
+      models = models.filter((m) => !staleModelIds.has(m.id));
+      // Sync maxOutput and cap maxTokens from defaults
+      models = models.map((m) => {
+        const def = defaultMap.get(m.id);
+        if (!def) return m;
+        return {
+          ...m,
+          maxOutput: def.maxOutput,
+          parameters: {
+            ...m.parameters,
+            maxTokens: Math.min(m.parameters.maxTokens, def.maxOutput),
+          },
+        };
+      });
+      // Add any missing default models
+      const existingIds = new Set(models.map((m) => m.id));
+      for (const def of defaultModels) {
+        if (!existingIds.has(def.id)) {
+          models.push({
+            id: def.id,
+            name: def.name,
+            provider: def.provider,
+            providerType: def.providerType,
+            enabled: true,
+            isFree: def.isFree,
+            contextWindow: def.maxTokens,
+            maxOutput: def.maxOutput,
+            pricing: def.pricing,
+            parameters: { temperature: 0.7, maxTokens: def.maxOutput },
           });
         }
+      }
+    }
+  }
 
-        if (version < 5) {
-          // Replace removed OpenRouter models and fix maxOutput values
-          const modelReplacements: Record<string, string> = {
-            'deepseek/deepseek-chat-v3-0324:free': 'deepseek/deepseek-r1-0528:free',
-            'deepseek/deepseek-r1-zero:free': 'deepseek/deepseek-r1-0528:free',
-          };
+  if (version < 7) {
+    // Add contextWindow property to all models
+    if (models) {
+      models = models.map((m) => {
+        const def = defaultMap.get(m.id);
+        const existing = (m as unknown as Record<string, unknown>).contextWindow as number | undefined;
+        return {
+          ...m,
+          contextWindow: existing ?? def?.maxTokens ?? 4096,
+        };
+      });
+    }
+  }
 
-          let selectedIds = state.selectedModelIds as string[] | undefined;
-          if (selectedIds) {
-            const replaced = new Set<string>();
-            selectedIds = selectedIds
-              .map((id) => modelReplacements[id] ?? id)
-              .filter((id) => {
-                if (replaced.has(id)) return false;
-                replaced.add(id);
-                return true;
-              });
-            state.selectedModelIds = selectedIds;
-          }
-
-          if (models) {
-            // Remove old models that no longer exist, add replacements from defaults
-            const removedIds = new Set(Object.keys(modelReplacements));
-            models = models.filter((m) => !removedIds.has(m.id));
-            // Sync maxOutput from defaults for all models
-            models = models.map((m) => {
-              const def = defaultMap.get(m.id);
-              if (!def) return m;
-              return {
-                ...m,
-                maxOutput: def.maxOutput,
-                parameters: {
-                  ...m.parameters,
-                  maxTokens: Math.min(m.parameters.maxTokens, def.maxOutput),
-                },
-              };
-            });
-            // Add new default models not yet in the list
-            const existingIds = new Set(models.map((m) => m.id));
-            for (const def of defaultModels) {
-              if (!existingIds.has(def.id)) {
-                models.push({
-                  id: def.id,
-                  name: def.name,
-                  provider: def.provider,
-                  providerType: def.providerType,
-                  enabled: true,
-                  isFree: def.isFree,
-                  contextWindow: def.maxTokens,
-                  maxOutput: def.maxOutput,
-                  pricing: def.pricing,
-                  parameters: { temperature: 0.7, maxTokens: def.maxOutput },
-                });
-              }
-            }
-          }
-        }
-
-        if (version < 6) {
-          // Re-run model cleanup for users who were already at v5 before
-          // deepseek-chat-v3-0324:free and deepseek-r1-zero:free were removed
-          const staleModelIds = new Set([
-            'deepseek/deepseek-chat-v3-0324:free',
-            'deepseek/deepseek-r1-zero:free',
-          ]);
-          const replacementId = 'deepseek/deepseek-r1-0528:free';
-
-          let selectedIds = state.selectedModelIds as string[] | undefined;
-          if (selectedIds) {
-            const seen = new Set<string>();
-            selectedIds = selectedIds
-              .map((id) => staleModelIds.has(id) ? replacementId : id)
-              .filter((id) => {
-                if (seen.has(id)) return false;
-                seen.add(id);
-                return true;
-              });
-            state.selectedModelIds = selectedIds;
-          }
-
-          if (models) {
-            models = models.filter((m) => !staleModelIds.has(m.id));
-            // Sync maxOutput and cap maxTokens from defaults
-            models = models.map((m) => {
-              const def = defaultMap.get(m.id);
-              if (!def) return m;
-              return {
-                ...m,
-                maxOutput: def.maxOutput,
-                parameters: {
-                  ...m.parameters,
-                  maxTokens: Math.min(m.parameters.maxTokens, def.maxOutput),
-                },
-              };
-            });
-            // Add any missing default models
-            const existingIds = new Set(models.map((m) => m.id));
-            for (const def of defaultModels) {
-              if (!existingIds.has(def.id)) {
-                models.push({
-                  id: def.id,
-                  name: def.name,
-                  provider: def.provider,
-                  providerType: def.providerType,
-                  enabled: true,
-                  isFree: def.isFree,
-                  contextWindow: def.maxTokens,
-                  maxOutput: def.maxOutput,
-                  pricing: def.pricing,
-                  parameters: { temperature: 0.7, maxTokens: def.maxOutput },
-                });
-              }
-            }
-          }
-        }
-
-        if (version < 7) {
-          // Add contextWindow property to all models
-          if (models) {
-            models = models.map((m) => {
-              const def = defaultMap.get(m.id);
-              const existing = (m as unknown as Record<string, unknown>).contextWindow as number | undefined;
-              return {
-                ...m,
-                contextWindow: existing ?? def?.maxTokens ?? 4096,
-              };
-            });
-          }
-        }
-
-        return { ...state, models };
+  return { ...state, models };
 }

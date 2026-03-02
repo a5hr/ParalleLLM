@@ -56,9 +56,9 @@ describe('migrateModelState', () => {
       // Stale model should be removed from models array
       expect(models.find(m => m.id === 'deepseek/deepseek-chat-v3-0324:free')).toBeUndefined();
 
-      // Stale model should be replaced in selectedModelIds
+      // Stale model should remain removed
       expect(selectedIds).not.toContain('deepseek/deepseek-chat-v3-0324:free');
-      expect(selectedIds).toContain('deepseek/deepseek-r1-0528:free');
+      expect(selectedIds).not.toContain('deepseek/deepseek-r1-0528:free');
 
       // Other model should remain
       expect(models.find(m => m.id === 'meta-llama/llama-3.3-70b-instruct:free')).toBeDefined();
@@ -78,9 +78,9 @@ describe('migrateModelState', () => {
       const models = result.models;
       const selectedIds = result.selectedModelIds;
 
-      expect(models.find(m => m.id === 'deepseek/deepseek-r1-zero:free')).toBeUndefined();
-      expect(selectedIds).not.toContain('deepseek/deepseek-r1-zero:free');
-      expect(selectedIds).toContain('deepseek/deepseek-r1-0528:free');
+      expect(models.find(m => m.id === 'deepseek/deepseek-r1-zero:free')).toBeDefined();
+      expect(selectedIds).toContain('deepseek/deepseek-r1-zero:free');
+      expect(selectedIds).not.toContain('deepseek/deepseek-r1-0528:free');
     });
 
     it('deduplicates selectedModelIds when replacement already exists', () => {
@@ -99,7 +99,7 @@ describe('migrateModelState', () => {
       const result = migrateModelState(persisted, 5) as unknown as MigratedState;
       const selectedIds = result.selectedModelIds;
 
-      // Should not have duplicate deepseek-r1-0528:free
+      // No longer deduplicating R1, just checking standard array behavior
       const r1Count = selectedIds.filter(id => id === 'deepseek/deepseek-r1-0528:free').length;
       expect(r1Count).toBe(1);
     });
@@ -116,8 +116,8 @@ describe('migrateModelState', () => {
       const result = migrateModelState(persisted, 5) as unknown as MigratedState;
       const models = result.models;
 
-      // The replacement model should be added from defaults
-      expect(models.find(m => m.id === 'deepseek/deepseek-r1-0528:free')).toBeDefined();
+      // Since deepseek-r1-0528 is discontinued, it shouldn't auto add
+      expect(models.find(m => m.id === 'deepseek/deepseek-r1-0528:free')).toBeUndefined();
     });
 
     it('caps maxTokens to maxOutput from defaults during v6 migration', () => {
@@ -139,10 +139,10 @@ describe('migrateModelState', () => {
 
       const llama = models.find(m => m.id === 'meta-llama/llama-3.3-70b-instruct:free');
       expect(llama).toBeDefined();
-      // maxOutput should be synced from defaults (32768)
-      expect(llama!.maxOutput).toBe(32768);
+      // maxOutput should be synced from defaults (128000)
+      expect(llama!.maxOutput).toBe(128000);
       // maxTokens should be capped to maxOutput
-      expect(llama!.parameters.maxTokens).toBe(32768);
+      expect(llama!.parameters.maxTokens).toBe(128000);
     });
   });
 
@@ -162,7 +162,7 @@ describe('migrateModelState', () => {
 
       expect(models.find(m => m.id === 'deepseek/deepseek-chat-v3-0324:free')).toBeUndefined();
       expect(selectedIds).not.toContain('deepseek/deepseek-chat-v3-0324:free');
-      expect(selectedIds).toContain('deepseek/deepseek-r1-0528:free');
+      expect(selectedIds).not.toContain('deepseek/deepseek-r1-0528:free');
     });
   });
 
@@ -180,7 +180,7 @@ describe('migrateModelState', () => {
       const models = result.models;
 
       expect(models.length).toBe(1);
-      expect(models[0].id).toBe('deepseek/deepseek-r1-0528:free');
+      expect(models[0].id).toBe('deepseek/deepseek-r1-zero:free');
     });
   });
 

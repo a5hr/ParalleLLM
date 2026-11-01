@@ -265,8 +265,8 @@
     "provider": "openrouter",
     "providerType": "cloud",
     "isFree": true,
-    "maxTokens": 128000,
-    "maxOutput": 128000,
+    "maxTokens": 131072,
+    "maxOutput": 32768,
     "pricing": null,
     "supportedFeatures": [
       "streaming"

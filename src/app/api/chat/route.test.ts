@@ -1,15 +1,23 @@
 import { describe, it, expect } from 'vitest';
 import { capMaxTokens, fixedTemperatureModels, thinkingModels } from './route';
+import { defaultModels } from '@/lib/models';
+
+const maxOutputOf = (id: string) => {
+  const model = defaultModels.find(m => m.id === id);
+  if (!model) throw new Error(`Model not found in models.json: ${id}`);
+  return model.maxOutput;
+};
+const LLAMA_ID = 'meta-llama/llama-3.3-70b-instruct:free';
+const DEEPSEEK_ID = 'deepseek/deepseek-r1-zero:free';
 
 describe('capMaxTokens', () => {
   it('caps to server maxOutput for known model (OpenRouter Llama)', () => {
-    // meta-llama/llama-3.3-70b-instruct:free has maxOutput 128000 now
-    expect(capMaxTokens(160000, 'meta-llama/llama-3.3-70b-instruct:free', false)).toBe(128000);
+    // Expected value follows models.json, which is auto-updated daily
+    expect(capMaxTokens(160000, LLAMA_ID, false)).toBe(maxOutputOf(LLAMA_ID));
   });
 
   it('caps to server maxOutput for known model (DeepSeek R1)', () => {
-    // deepseek/deepseek-r1-zero:free has maxOutput 32768
-    expect(capMaxTokens(163840, 'deepseek/deepseek-r1-zero:free', false)).toBe(32768);
+    expect(capMaxTokens(163840, DEEPSEEK_ID, false)).toBe(maxOutputOf(DEEPSEEK_ID));
   });
 
   it('returns requested value when within server limit', () => {
@@ -22,7 +30,7 @@ describe('capMaxTokens', () => {
 
   it('caps resolved alias model to its maxOutput', () => {
     // If we passed an alias and it resolved, it would cap. We just test the base behavior now
-    expect(capMaxTokens(163840, 'deepseek/deepseek-r1-zero:free', false)).toBe(32768);
+    expect(capMaxTokens(163840, DEEPSEEK_ID, false)).toBe(maxOutputOf(DEEPSEEK_ID));
   });
 
   it('caps to FALLBACK_MAX_OUTPUT for any unknown model ID without baseUrl', () => {
@@ -35,7 +43,7 @@ describe('capMaxTokens', () => {
 
   it('still caps known model even with baseUrl', () => {
     // Known model ID overrides baseUrl trust
-    expect(capMaxTokens(160000, 'meta-llama/llama-3.3-70b-instruct:free', true)).toBe(128000);
+    expect(capMaxTokens(160000, LLAMA_ID, true)).toBe(maxOutputOf(LLAMA_ID));
   });
 });
 

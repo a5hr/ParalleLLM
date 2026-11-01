@@ -123,7 +123,7 @@ describe('migrateModelState', () => {
     it('caps maxTokens to maxOutput from defaults during v6 migration', () => {
       const persisted = {
         models: [
-          // Model with inflated maxTokens (should be capped to 128000)
+          // Model with inflated maxTokens (should be capped to the default maxOutput)
           makeModel({
             id: 'meta-llama/llama-3.3-70b-instruct:free',
             maxOutput: 200000,
@@ -139,10 +139,11 @@ describe('migrateModelState', () => {
 
       const llama = models.find(m => m.id === 'meta-llama/llama-3.3-70b-instruct:free');
       expect(llama).toBeDefined();
-      // maxOutput should be synced from defaults (128000)
-      expect(llama!.maxOutput).toBe(128000);
+      const expected = defaultModels.find(m => m.id === 'meta-llama/llama-3.3-70b-instruct:free')!.maxOutput;
+      // maxOutput should be synced from defaults
+      expect(llama!.maxOutput).toBe(expected);
       // maxTokens should be capped to maxOutput
-      expect(llama!.parameters.maxTokens).toBe(128000);
+      expect(llama!.parameters.maxTokens).toBe(expected);
     });
   });
 

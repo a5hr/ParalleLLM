@@ -128,6 +128,34 @@ describe('migrateModelState', () => {
       expect(result.selectedModelIds).toEqual([KEPT_ID]);
     });
 
+    it('refreshes limits of kept models for users already at v8', () => {
+      const persisted = {
+        models: [makeModel({ id: KEPT_ID, provider: 'groq', maxOutput: 8192, maxTokens: 8192 })],
+        selectedModelIds: [KEPT_ID],
+        localEndpoints: [],
+      };
+
+      const result = migrateModelState(persisted, 8) as unknown as MigratedState;
+      const model = result.models.find((m) => m.id === KEPT_ID);
+
+      // Stale maxOutput (8192) is replaced by the new default; user's lower maxTokens is preserved
+      expect(model!.maxOutput).toBe(defaultMaxOutput(KEPT_ID));
+      expect(model!.parameters.maxTokens).toBe(8192);
+    });
+
+    it('caps maxTokens of kept models to the new maxOutput', () => {
+      const persisted = {
+        models: [makeModel({ id: KEPT_ID, provider: 'groq', maxOutput: 8192, maxTokens: 999999 })],
+        selectedModelIds: [],
+        localEndpoints: [],
+      };
+
+      const result = migrateModelState(persisted, 7) as unknown as MigratedState;
+      const model = result.models.find((m) => m.id === KEPT_ID);
+
+      expect(model!.parameters.maxTokens).toBe(defaultMaxOutput(KEPT_ID));
+    });
+
     it('keeps local models and their selection', () => {
       const persisted = {
         models: [
@@ -161,14 +189,14 @@ describe('migrateModelState', () => {
   });
 
   describe('current version: no migration needed', () => {
-    it('returns state unchanged for version 8', () => {
+    it('returns state unchanged for version 9', () => {
       const persisted = {
         models: [makeModel({ id: 'some-old-model' })],
         selectedModelIds: ['some-old-model'],
         localEndpoints: [],
       };
 
-      const result = migrateModelState(persisted, 8) as unknown as MigratedState;
+      const result = migrateModelState(persisted, 9) as unknown as MigratedState;
 
       expect(result.models.length).toBe(1);
       expect(result.models[0].id).toBe('some-old-model');

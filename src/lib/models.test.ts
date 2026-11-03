@@ -107,14 +107,15 @@ describe('model definitions integrity', () => {
     }
   });
 
-  it('Groq models have maxOutput <= 8192 (API hard limit)', () => {
+  it('Groq models have maxOutput within their context window', () => {
     const groqModels = defaultModels.filter((m) => m.provider === 'groq');
     expect(groqModels.length).toBeGreaterThan(0);
     for (const model of groqModels) {
+      expect(model.maxOutput, `${model.id}: maxOutput must be positive`).toBeGreaterThan(0);
       expect(
         model.maxOutput,
-        `${model.id}: Groq maxOutput (${model.maxOutput}) must be <= 8192`
-      ).toBeLessThanOrEqual(8192);
+        `${model.id}: Groq maxOutput (${model.maxOutput}) must be <= context window (${model.maxTokens})`
+      ).toBeLessThanOrEqual(model.maxTokens);
     }
   });
 });

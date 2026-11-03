@@ -49,135 +49,148 @@
   },
   "include": {
     "openai": [
-      "gpt-5.2",
-      "gpt-5-mini",
-      "gpt-4o-mini"
+      "gpt-6-astra",
+      "gpt-6.1-sol",
+      "gpt-6-luna"
     ],
     "anthropic": [
-      "claude-opus-4-6",
-      "claude-sonnet-4-5-20250929",
-      "claude-haiku-4-5-20251001"
+      "claude-opus-5-5",
+      "claude-sonnet-5-5",
+      "claude-haiku-5-5"
     ],
     "google": [
-      "gemini-3-flash-preview",
-      "gemini-2.5-pro",
-      "gemini-2.5-flash"
+      "gemini-3.1-pro-preview",
+      "gemini-3.8-flash",
+      "gemini-3.5-flash-lite"
     ],
     "groq": [
-      "llama-3.3-70b-versatile",
       "openai/gpt-oss-120b",
-      "meta-llama/llama-4-maverick-17b-128e-instruct",
-      "meta-llama/llama-4-scout-17b-16e-instruct",
-      "qwen/qwen3-32b"
+      "qwen/qwen3.8-27b",
+      "openai/gpt-oss-20b"
     ],
     "openrouter": [
-      "meta-llama/llama-3.3-70b-instruct:free",
-      "deepseek/deepseek-chat-v3-0324:free",
-      "deepseek/deepseek-r1-zero:free",
-      "mistralai/mistral-small-3.1-24b-instruct:free"
+      "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "google/gemma-4-31b-it:free",
+      "thinkingmachines/inkling:free"
     ]
   },
   "overrides": {
-    "gpt-5.2": {
-      "name": "GPT-5.2",
-      "maxTokens": 400000,
+    "gpt-6-astra": {
+      "name": "GPT-6 Astra",
+      "maxTokens": 1050000,
       "maxOutput": 128000,
       "pricing": {
-        "input": 1.75,
-        "output": 14.00
+        "input": 10.0,
+        "output": 50.0
       },
       "supportedFeatures": [
         "streaming",
         "function-calling",
         "reasoning"
-      ]
-    },
-    "gpt-5-mini": {
-      "name": "GPT-5 mini",
-      "maxTokens": 1047576,
-      "maxOutput": 32768,
-      "pricing": {
-        "input": 0.25,
-        "output": 2.00
-      },
-      "supportedFeatures": [
-        "streaming",
-        "function-calling"
       ],
       "supportsTemperature": false
     },
-    "gpt-4o-mini": {
-      "name": "GPT-4o mini",
-      "maxTokens": 128000,
-      "pricing": {
-        "input": 0.15,
-        "output": 0.60
-      },
-      "supportedFeatures": [
-        "streaming",
-        "function-calling"
-      ]
-    },
-    "claude-opus-4-6": {
-      "maxTokens": 200000,
+    "gpt-6.1-sol": {
+      "name": "GPT-6.1 Sol",
+      "maxTokens": 1050000,
       "maxOutput": 128000,
       "pricing": {
-        "input": 5.00,
-        "output": 25.00
+        "input": 2.0,
+        "output": 10.0
       },
       "supportedFeatures": [
         "streaming",
-        "extended-thinking",
-        "adaptive-thinking"
-      ]
-    },
-    "claude-sonnet-4-5-20250929": {
-      "maxTokens": 200000,
-      "maxOutput": 64000,
-      "pricing": {
-        "input": 3.00,
-        "output": 15.00
-      },
-      "supportedFeatures": [
-        "streaming",
-        "extended-thinking"
-      ]
-    },
-    "claude-haiku-4-5-20251001": {
-      "maxTokens": 200000,
-      "maxOutput": 64000,
-      "pricing": {
-        "input": 1.00,
-        "output": 5.00
-      },
-      "supportedFeatures": [
-        "streaming",
-        "extended-thinking"
-      ]
-    },
-    "gemini-3-flash-preview": {
-      "pricing": {
-        "input": 0.50,
-        "output": 3.00
-      }
-    },
-    "gemini-2.5-pro": {
-      "pricing": {
-        "input": 1.25,
-        "output": 10.00
-      }
-    },
-    "gemini-2.5-flash": {
-      "pricing": {
-        "input": 0.15,
-        "output": 0.60
-      }
-    },
-    "deepseek/deepseek-r1-zero:free": {
-      "supportedFeatures": [
-        "streaming",
+        "function-calling",
         "reasoning"
-      ]
+      ],
+      "supportsTemperature": false
+    },
+    "gpt-6-luna": {
+      "name": "GPT-6 Luna",
+      "maxTokens": 1050000,
+      "maxOutput": 128000,
+      "pricing": {
+        "input": 0.1,
+        "output": 0.5
+      },
+      "supportedFeatures": [
+        "streaming",
+        "function-calling",
+        "reasoning"
+      ],
+      "supportsTemperature": false
+    },
+    "claude-opus-5-5": {
+      "maxTokens": 1000000,
+      "maxOutput": 128000,
+      "pricing": {
+        "input": 4.0,
+        "output": 20.0
+      },
+      "supportedFeatures": [
+        "streaming",
+        "adaptive-thinking"
+      ],
+      "supportsTemperature": false
+    },
+    "claude-sonnet-5-5": {
+      "maxTokens": 1000000,
+      "maxOutput": 128000,
+      "pricing": {
+        "input": 2.0,
+        "output": 10.0
+      },
+      "supportedFeatures": [
+        "streaming",
+        "adaptive-thinking"
+      ],
+      "supportsTemperature": false
+    },
+    "claude-haiku-5-5": {
+      "maxTokens": 1000000,
+      "maxOutput": 128000,
+      "pricing": {
+        "input": 0.1,
+        "output": 0.5
+      },
+      "supportedFeatures": [
+        "streaming",
+        "adaptive-thinking"
+      ],
+      "supportsTemperature": false
+    },
+    "gemini-3.1-pro-preview": {
+      "pricing": {
+        "input": 2.0,
+        "output": 12.0
+      }
+    },
+    "gemini-3.8-flash": {
+      "pricing": {
+        "input": 0.75,
+        "output": 3.75
+      }
+    },
+    "gemini-3.5-flash-lite": {
+      "pricing": {
+        "input": 0.3,
+        "output": 2.5
+      }
+    },
+    "openai/gpt-oss-120b": {
+      "name": "GPT-OSS 120B",
+      "maxTokens": 131072,
+      "maxOutput": 65536
+    },
+    "openai/gpt-oss-20b": {
+      "name": "GPT-OSS 20B",
+      "maxTokens": 131072,
+      "maxOutput": 65536
+    },
+    "qwen/qwen3.8-27b": {
+      "name": "Qwen3.8 27B",
+      "maxTokens": 131072,
+      "maxOutput": 16384
     }
   },
   "static": [

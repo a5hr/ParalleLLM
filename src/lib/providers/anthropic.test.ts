@@ -126,6 +126,29 @@ describe('anthropicProvider', () => {
     expect(callArgs.temperature).toBe(0.5);
   });
 
+  it('omits temperature and thinking for fixed-temperature models (temperature undefined)', async () => {
+    const asyncIterable = (async function* () {
+      yield { type: 'content_block_delta', delta: { type: 'text_delta', text: 'hi' } };
+    })();
+    mockCreate.mockResolvedValue(asyncIterable);
+
+    for await (const chunk of anthropicProvider.chatStream(
+      {
+        messages: [{ role: 'user', content: 'hi' }],
+        model: 'claude-opus-5-5',
+        temperature: undefined,
+      },
+      'test-key',
+      new AbortController().signal
+    )) {
+      void chunk;
+    }
+
+    const callArgs = mockCreate.mock.calls[0][0];
+    expect(callArgs).not.toHaveProperty('thinking');
+    expect(callArgs).not.toHaveProperty('temperature');
+  });
+
   it('computes budget_tokens as 4x maxTokens with minimum 1024', async () => {
     const asyncIterable = (async function* () {
       yield { type: 'content_block_delta', delta: { type: 'text_delta', text: 'hi' } };

@@ -7,21 +7,22 @@ const maxOutputOf = (id: string) => {
   if (!model) throw new Error(`Model not found in models.json: ${id}`);
   return model.maxOutput;
 };
-const LLAMA_ID = 'meta-llama/llama-3.3-70b-instruct:free';
-const DEEPSEEK_ID = 'deepseek/deepseek-r1-zero:free';
+// Two Groq models with different maxOutput limits
+const LARGE_ID = 'openai/gpt-oss-120b';
+const SMALL_ID = 'qwen/qwen3.8-27b';
 
 describe('capMaxTokens', () => {
-  it('caps to server maxOutput for known model (OpenRouter Llama)', () => {
+  it('caps to server maxOutput for known model (large limit)', () => {
     // Expected value follows models.json, which is auto-updated daily
-    expect(capMaxTokens(160000, LLAMA_ID, false)).toBe(maxOutputOf(LLAMA_ID));
+    expect(capMaxTokens(1_000_000, LARGE_ID, false)).toBe(maxOutputOf(LARGE_ID));
   });
 
-  it('caps to server maxOutput for known model (DeepSeek R1)', () => {
-    expect(capMaxTokens(163840, DEEPSEEK_ID, false)).toBe(maxOutputOf(DEEPSEEK_ID));
+  it('caps to server maxOutput for known model (small limit)', () => {
+    expect(capMaxTokens(163840, SMALL_ID, false)).toBe(maxOutputOf(SMALL_ID));
   });
 
   it('returns requested value when within server limit', () => {
-    expect(capMaxTokens(4096, 'deepseek/deepseek-r1-zero:free', false)).toBe(4096);
+    expect(capMaxTokens(4096, SMALL_ID, false)).toBe(4096);
   });
 
   it('caps to FALLBACK_MAX_OUTPUT (4096) for unknown cloud model', () => {
@@ -30,7 +31,7 @@ describe('capMaxTokens', () => {
 
   it('caps resolved alias model to its maxOutput', () => {
     // If we passed an alias and it resolved, it would cap. We just test the base behavior now
-    expect(capMaxTokens(163840, DEEPSEEK_ID, false)).toBe(maxOutputOf(DEEPSEEK_ID));
+    expect(capMaxTokens(163840, SMALL_ID, false)).toBe(maxOutputOf(SMALL_ID));
   });
 
   it('caps to FALLBACK_MAX_OUTPUT for any unknown model ID without baseUrl', () => {
@@ -43,36 +44,37 @@ describe('capMaxTokens', () => {
 
   it('still caps known model even with baseUrl', () => {
     // Known model ID overrides baseUrl trust
-    expect(capMaxTokens(160000, LLAMA_ID, true)).toBe(maxOutputOf(LLAMA_ID));
+    expect(capMaxTokens(1_000_000, LARGE_ID, true)).toBe(maxOutputOf(LARGE_ID));
   });
 });
 
 describe('fixedTemperatureModels', () => {
-  it('includes gpt-5-mini', () => {
-    expect(fixedTemperatureModels.has('gpt-5-mini')).toBe(true);
+  it('includes GPT-6 and Claude 5 models (temperature not sent)', () => {
+    expect(fixedTemperatureModels.has('gpt-6.1-sol')).toBe(true);
+    expect(fixedTemperatureModels.has('claude-opus-5-5')).toBe(true);
   });
 
   it('does not include models that support temperature', () => {
-    expect(fixedTemperatureModels.has('gpt-5.2')).toBe(false);
-    expect(fixedTemperatureModels.has('gpt-4o-mini')).toBe(false);
-    expect(fixedTemperatureModels.has('llama-3.3-70b-versatile')).toBe(false);
+    expect(fixedTemperatureModels.has('gemini-3.8-flash')).toBe(false);
+    expect(fixedTemperatureModels.has('openai/gpt-oss-120b')).toBe(false);
+    expect(fixedTemperatureModels.has('qwen/qwen3.8-27b')).toBe(false);
   });
 });
 
 describe('thinkingModels', () => {
   it('includes models with reasoning feature', () => {
-    expect(thinkingModels.has('gpt-5.2')).toBe(true);
-    expect(thinkingModels.has('deepseek/deepseek-r1-zero:free')).toBe(true);
+    expect(thinkingModels.has('gpt-6.1-sol')).toBe(true);
+    expect(thinkingModels.has('gpt-6-luna')).toBe(true);
   });
 
-  it('includes models with extended-thinking feature', () => {
-    expect(thinkingModels.has('claude-opus-4-6')).toBe(true);
-    expect(thinkingModels.has('claude-sonnet-4-5-20250929')).toBe(true);
-    expect(thinkingModels.has('claude-haiku-4-5-20251001')).toBe(true);
+  it('excludes Claude 5 models (adaptive thinking, no manual budget)', () => {
+    expect(thinkingModels.has('claude-opus-5-5')).toBe(false);
+    expect(thinkingModels.has('claude-sonnet-5-5')).toBe(false);
+    expect(thinkingModels.has('claude-haiku-5-5')).toBe(false);
   });
 
   it('does not include models without thinking features', () => {
-    expect(thinkingModels.has('gpt-4o-mini')).toBe(false);
-    expect(thinkingModels.has('llama-3.3-70b-versatile')).toBe(false);
+    expect(thinkingModels.has('gemini-3.8-flash')).toBe(false);
+    expect(thinkingModels.has('qwen/qwen3.8-27b')).toBe(false);
   });
 });

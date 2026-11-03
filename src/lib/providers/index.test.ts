@@ -18,10 +18,11 @@ describe('getProvider', () => {
 
 describe('getProviderForModel', () => {
   it('routes known model IDs to correct providers', () => {
-    expect(getProviderForModel('gpt-5.2').name).toBe('openai');
-    expect(getProviderForModel('claude-opus-4-6').name).toBe('anthropic');
-    expect(getProviderForModel('gemini-2.5-pro').name).toBe('google');
-    expect(getProviderForModel('llama-3.3-70b-versatile').name).toBe('groq');
+    expect(getProviderForModel('gpt-6.1-sol').name).toBe('openai');
+    expect(getProviderForModel('claude-opus-5-5').name).toBe('anthropic');
+    expect(getProviderForModel('gemini-3.8-flash').name).toBe('google');
+    expect(getProviderForModel('openai/gpt-oss-120b').name).toBe('groq');
+    expect(getProviderForModel('thinkingmachines/inkling:free').name).toBe('openrouter');
   });
 
   it('routes ollama/ prefix to ollama provider', () => {
@@ -52,24 +53,19 @@ describe('getProviderForModel', () => {
     expect(() => getProviderForModel('completely-unknown-model')).toThrow('Unknown model');
   });
 
-  it('resolves deprecated model aliases to correct provider', () => {
-    // deepseek-chat-v3-0324:free is now directly supported, but if it were an alias it would resolve
-    // Let's use a hypothetical alias if we had one, or just test a known model
-    expect(getProviderForModel('deepseek/deepseek-chat-v3-0324:free').name).toBe('openrouter');
-    expect(getProviderForModel('deepseek/deepseek-r1-zero:free').name).toBe('openrouter');
+  it('throws for discontinued models that were removed from models.json', () => {
+    expect(() => getProviderForModel('deepseek/deepseek-r1-zero:free')).toThrow('Unknown model');
   });
 });
 
 describe('resolveModelId', () => {
   it('resolves deprecated models to replacements', () => {
     // Currently no aliases are defined that change the ID, but we test the identity function
-    expect(resolveModelId('deepseek/deepseek-chat-v3-0324:free')).toBe('deepseek/deepseek-chat-v3-0324:free');
-    expect(resolveModelId('deepseek/deepseek-r1-zero:free')).toBe('deepseek/deepseek-r1-zero:free');
+    expect(resolveModelId('gpt-5.2')).toBe('gpt-5.2');
   });
 
   it('returns known models unchanged', () => {
-    expect(resolveModelId('deepseek/deepseek-r1-zero:free')).toBe('deepseek/deepseek-r1-zero:free');
-    expect(resolveModelId('gpt-5.2')).toBe('gpt-5.2');
+    expect(resolveModelId('gpt-6.1-sol')).toBe('gpt-6.1-sol');
   });
 });
 

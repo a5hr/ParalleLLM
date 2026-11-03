@@ -95,7 +95,7 @@ describe('model definitions integrity', () => {
   it('models with supportsTemperature=false exist and are flagged', () => {
     const fixedTemp = defaultModels.filter((m) => !m.supportsTemperature);
     expect(fixedTemp.length).toBeGreaterThan(0);
-    expect(fixedTemp.map((m) => m.id)).toContain('gpt-5-mini');
+    expect(fixedTemp.map((m) => m.id)).toContain('gpt-6.1-sol');
   });
 
   it('most models support temperature by default', () => {

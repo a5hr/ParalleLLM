@@ -140,7 +140,7 @@ export const useModelStore = create<ModelState>()(
     }),
     {
       name: 'parallellm-models',
-      version: 7,
+      version: 8,
       partialize: (state) => ({
         models: state.models,
         selectedModelIds: state.selectedModelIds,
@@ -304,6 +304,37 @@ export function migrateModelState(persisted: unknown, version: number): Record<s
           contextWindow: existing ?? def?.maxTokens ?? 4096,
         };
       });
+    }
+  }
+
+  if (version < 8) {
+    // The default lineup was replaced (Claude 5 / GPT-6 / Gemini 3.x etc.).
+    // Drop cloud models that are no longer defaults and add the new ones.
+    // Local/custom models are user-defined and kept.
+    if (models) {
+      models = models.filter((m) => m.providerType !== 'cloud' || defaultMap.has(m.id));
+      const existingIds = new Set(models.map((m) => m.id));
+      for (const def of defaultModels) {
+        if (!existingIds.has(def.id)) {
+          models.push({
+            id: def.id,
+            name: def.name,
+            provider: def.provider,
+            providerType: def.providerType,
+            enabled: true,
+            isFree: def.isFree,
+            contextWindow: def.maxTokens,
+            maxOutput: def.maxOutput,
+            pricing: def.pricing,
+            parameters: { temperature: 0.7, maxTokens: def.maxOutput },
+          });
+        }
+      }
+      const keptIds = new Set(models.map((m) => m.id));
+      const selectedIds = state.selectedModelIds as string[] | undefined;
+      if (selectedIds) {
+        state.selectedModelIds = selectedIds.filter((id) => keptIds.has(id));
+      }
     }
   }
 

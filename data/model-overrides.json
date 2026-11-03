@@ -121,6 +121,7 @@
       "supportsTemperature": false
     },
     "claude-opus-5-5": {
+      "name": "Claude Opus 5.5",
       "maxTokens": 1000000,
       "maxOutput": 128000,
       "pricing": {
@@ -134,6 +135,7 @@
       "supportsTemperature": false
     },
     "claude-sonnet-5-5": {
+      "name": "Claude Sonnet 5.5",
       "maxTokens": 1000000,
       "maxOutput": 128000,
       "pricing": {
@@ -147,6 +149,7 @@
       "supportsTemperature": false
     },
     "claude-haiku-5-5": {
+      "name": "Claude Haiku 5.5",
       "maxTokens": 1000000,
       "maxOutput": 128000,
       "pricing": {
@@ -160,18 +163,27 @@
       "supportsTemperature": false
     },
     "gemini-3.1-pro-preview": {
+      "name": "Gemini 3.1 Pro Preview",
+      "maxTokens": 1048576,
+      "maxOutput": 65536,
       "pricing": {
         "input": 2.0,
         "output": 12.0
       }
     },
     "gemini-3.8-flash": {
+      "name": "Gemini 3.8 Flash",
+      "maxTokens": 1048576,
+      "maxOutput": 65536,
       "pricing": {
         "input": 0.75,
         "output": 3.75
       }
     },
     "gemini-3.5-flash-lite": {
+      "name": "Gemini 3.5 Flash Lite",
+      "maxTokens": 1048576,
+      "maxOutput": 65536,
       "pricing": {
         "input": 0.3,
         "output": 2.5

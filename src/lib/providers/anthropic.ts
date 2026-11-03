@@ -29,7 +29,10 @@ export const anthropicProvider: LLMProvider = {
           max_tokens: request.maxTokens ?? 4096,
           ...(thinkingEnabled
             ? { thinking: { type: 'enabled', budget_tokens: budgetTokens } }
-            : { temperature: request.temperature ?? 0.7 }),
+            : // Omit temperature when undefined (fixed-temperature models such as Claude 5 reject it)
+              request.temperature !== undefined
+              ? { temperature: request.temperature }
+              : {}),
           stream: true,
         },
         { signal }

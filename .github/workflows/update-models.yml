@@ -27,6 +27,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Run update-models
+        id: update
+        continue-on-error: true
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -38,6 +40,7 @@ jobs:
         id: report
         run: |
           if [ -f data/update-report.md ]; then
+            cat data/update-report.md
             {
               echo 'body<<EOF'
               cat data/update-report.md
@@ -74,3 +77,10 @@ jobs:
             Run `pnpm run update-models --dry-run` locally to preview changes.
           branch: chore/update-models
           delete-branch: true
+
+      # The PR step above still runs when a provider fetch failed; fail the run afterwards
+      - name: Fail if API fetch failed
+        if: steps.update.outcome == 'failure'
+        run: |
+          echo "::error::update-models failed or a provider API fetch failed. See the review report above."
+          exit 1

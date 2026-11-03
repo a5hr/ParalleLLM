@@ -246,6 +246,7 @@ interface ReviewReport {
   missingModels: Array<{ provider: string; id: string }>;
   pricingChanges: Array<{ id: string; field: string; old: unknown; new: unknown }>;
   manualReviewItems: string[];
+  fetchFailures: Array<{ provider: string; reason: string }>;
 }
 
 function generateReport(report: ReviewReport): string {
@@ -255,7 +256,8 @@ function generateReport(report: ReviewReport): string {
     report.newModels.length > 0 ||
     report.missingModels.length > 0 ||
     report.pricingChanges.length > 0 ||
-    report.manualReviewItems.length > 0;
+    report.manualReviewItems.length > 0 ||
+    report.fetchFailures.length > 0;
 
   if (!hasContent) {
     lines.push('✅ No review items. All changes are auto-applied.', '');
@@ -282,6 +284,15 @@ function generateReport(report: ReviewReport): string {
       lines.push(`| ${m.provider} | \`${m.id}\` |`);
     }
     lines.push('', 'Consider removing them from `include` in `data/model-overrides.json`.', '');
+  }
+
+  if (report.fetchFailures.length > 0) {
+    lines.push('## ❌ API Fetch Failures', '');
+    lines.push('These providers fell back to existing data. Check the API key secrets.', '');
+    for (const f of report.fetchFailures) {
+      lines.push(`- \`${f.provider}\`: ${f.reason}`);
+    }
+    lines.push('');
   }
 
   if (report.pricingChanges.length > 0) {
@@ -324,6 +335,7 @@ async function main() {
     missingModels: [],
     pricingChanges: [],
     manualReviewItems: [],
+    fetchFailures: [],
   };
 
   // Collect models per provider (unordered)
@@ -347,7 +359,10 @@ async function main() {
     const fetcherConfig = fetchers[provider];
     let fetchSuccess = false;
     if (fetcherConfig) {
-      const apiKey = fetcherConfig.envKey ? process.env[fetcherConfig.envKey] : '';
+      // Secrets may hold a comma-separated key pool (same format as the app); use the first key
+      const apiKey = fetcherConfig.envKey
+        ? process.env[fetcherConfig.envKey]?.split(',')[0]?.trim()
+        : '';
       if (!fetcherConfig.requiresKey || apiKey) {
         try {
           const raw = await fetcherConfig.fetch(apiKey || '');
@@ -359,9 +374,11 @@ async function main() {
           const msg = err instanceof Error ? err.message : String(err);
           const safeMsg = apiKey ? msg.replaceAll(apiKey, '***') : msg;
           log(`  ${provider}: API fetch failed (${safeMsg}), using fallback`);
+          report.fetchFailures.push({ provider, reason: safeMsg });
         }
       } else {
         log(`  ${provider}: no API key ($${fetcherConfig.envKey}), using fallback`);
+        report.fetchFailures.push({ provider, reason: `no API key (${fetcherConfig.envKey})` });
       }
     }
 
@@ -516,6 +533,11 @@ async function main() {
   }
   if (report.missingModels.length > 0) {
     log(`⚠️  ${report.missingModels.length} model(s) in include list not found on APIs.`);
+  }
+  if (report.fetchFailures.length > 0) {
+    // Report is written first; non-zero exit lets the workflow flag the failure after opening the PR
+    log(`❌ API fetch failed for: ${report.fetchFailures.map((f) => f.provider).join(', ')}`);
+    process.exitCode = 1;
   }
 }
 

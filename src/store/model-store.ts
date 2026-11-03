@@ -140,7 +140,7 @@ export const useModelStore = create<ModelState>()(
     }),
     {
       name: 'parallellm-models',
-      version: 8,
+      version: 9,
       partialize: (state) => ({
         models: state.models,
         selectedModelIds: state.selectedModelIds,
@@ -335,6 +335,30 @@ export function migrateModelState(persisted: unknown, version: number): Record<s
       if (selectedIds) {
         state.selectedModelIds = selectedIds.filter((id) => keptIds.has(id));
       }
+    }
+  }
+
+  if (version < 9) {
+    // v8 kept models whose limits/pricing changed with the new lineup (e.g. Groq maxOutput)
+    // without refreshing them. Sync name/limits/pricing from defaults; keep the user's
+    // maxTokens unless it exceeds the new maxOutput.
+    if (models) {
+      models = models.map((m) => {
+        const def = defaultMap.get(m.id);
+        if (!def || m.providerType !== 'cloud') return m;
+        return {
+          ...m,
+          name: def.name,
+          isFree: def.isFree,
+          pricing: def.pricing,
+          contextWindow: def.maxTokens,
+          maxOutput: def.maxOutput,
+          parameters: {
+            ...m.parameters,
+            maxTokens: Math.min(m.parameters.maxTokens, def.maxOutput),
+          },
+        };
+      });
     }
   }
 
